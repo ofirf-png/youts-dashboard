@@ -131,6 +131,13 @@
   }
   .card-title a { color: inherit; text-decoration: none; }
   .card-title a:hover { text-decoration: underline; }
+  .yt-link {
+    display: inline-block; margin-top: 8px; margin-bottom: 10px;
+    background: #ff0000; color: #fff; font-size: 0.75rem; font-weight: 600;
+    padding: 5px 14px; border-radius: 6px; text-decoration: none;
+    transition: background 0.2s;
+  }
+  .yt-link:hover { background: #cc0000; }
   .section { margin-bottom: 16px; }
   .section-label {
     font-size: 0.68rem; text-transform: uppercase; letter-spacing: 2px;
@@ -298,6 +305,9 @@
     </button>
     <button class="btn-conclusions" id="conclusionsBtn" onclick="switchTab('conclusions')">
       מסקנות
+    </button>
+    <button class="btn-run-all" id="dashRefreshTopBtn" onclick="refreshDashboard()">
+      🔄 עדכן נתוני שוק
     </button>
   </div>
 
@@ -1227,7 +1237,8 @@ function renderCards(videos, articles, showChannel) {
       '<div class="card-number">' + num + '</div>' +
       '<div class="card-date">' + escapeHtml(dateStr) + viewsStr + '</div>' +
       channelLine +
-      '<div class="card-title"><a href="' + escapeHtml(video.url) + '" target="_blank" rel="noopener">' + escapeHtml(video.title) + '</a></div>' +
+      '<div class="card-title">' + escapeHtml(video.title) + '</div>' +
+      '<a class="yt-link" href="' + escapeHtml(video.url) + '" target="_blank" rel="noopener">▶ צפה ביוטיוב</a>' +
       topicTags +
       tickerBadges +
       '<div class="section"><div class="section-label">סיכום</div><div class="section-content">' + escapeHtml(article.summary) + '</div></div>' +
@@ -1983,11 +1994,15 @@ function setDashCardError(symbol) {
 }
 
 async function refreshDashboard() {
+  // Open dashboard if closed
+  if (!dashboardOpen) { toggleDashboard(); return; }
   if (dashLoading) return;
   dashLoading = true;
   var btn = document.getElementById('dashRefreshBtn');
+  var topBtn = document.getElementById('dashRefreshTopBtn');
   btn.disabled = true;
   btn.textContent = '⏳ טוען...';
+  if (topBtn) { topBtn.disabled = true; topBtn.textContent = '⏳ טוען...'; }
 
   renderDashCards('dashFx', DASH_SYMBOLS.fx);
   renderDashCards('dashIndices', DASH_SYMBOLS.indices);
@@ -2043,6 +2058,8 @@ async function refreshDashboard() {
   if (failed > 0) document.getElementById('dashUpdated').textContent += ', ' + failed + ' נכשלו';
   btn.disabled = false;
   btn.textContent = '🔄 עדכן';
+  var topBtn = document.getElementById('dashRefreshTopBtn');
+  if (topBtn) { topBtn.disabled = false; topBtn.textContent = '🔄 עדכן נתוני שוק'; }
   dashLoading = false;
 }
 
