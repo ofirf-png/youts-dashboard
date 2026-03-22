@@ -1,0 +1,2029 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>YouTS — Editorial Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --gold: #D4AF37;
+    --gold-light: #F5D76E;
+    --gold-dim: #8B7532;
+    --bg: #0A0A0A;
+    --card-bg: #111111;
+    --card-border: #1A1A1A;
+    --text: #E8E8E8;
+    --text-dim: #888888;
+  }
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh; direction: rtl; overflow-x: hidden;
+  }
+  body::before {
+    content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 0;
+  }
+  .container { max-width: 1280px; margin: 0 auto; padding: 32px 20px; position: relative; z-index: 1; }
+  .header { text-align: center; margin-bottom: 28px; }
+  .logo {
+    font-family: 'Playfair Display', serif; font-size: 3rem; font-weight: 900;
+    background: linear-gradient(135deg, var(--gold-light), var(--gold), var(--gold-dim));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text; letter-spacing: -1px; margin-bottom: 6px;
+  }
+  .tagline { font-size: 0.8rem; color: var(--text-dim); letter-spacing: 2px; text-transform: uppercase; }
+
+  /* Tabs */
+  .tabs-wrap { margin-bottom: 24px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .tabs-wrap::-webkit-scrollbar { height: 4px; }
+  .tabs-wrap::-webkit-scrollbar-thumb { background: var(--gold-dim); border-radius: 2px; }
+  .tabs {
+    display: flex; gap: 6px; padding: 4px 0; min-width: max-content; justify-content: center; flex-wrap: wrap;
+  }
+  .tab {
+    font-family: 'DM Mono', monospace; font-size: 0.78rem;
+    padding: 8px 16px; border-radius: 6px; cursor: pointer;
+    background: var(--card-bg); border: 1px solid var(--card-border);
+    color: var(--text-dim); transition: all 0.25s; white-space: nowrap; user-select: none;
+  }
+  .tab:hover { border-color: var(--gold-dim); color: var(--text); }
+  .tab.active {
+    background: linear-gradient(135deg, var(--gold), var(--gold-dim));
+    color: var(--bg); border-color: var(--gold); font-weight: 600;
+  }
+  .tab.has-data { position: relative; }
+  .tab.has-data::after {
+    content: ''; position: absolute; top: 4px; left: 4px;
+    width: 6px; height: 6px; border-radius: 50%; background: var(--gold-light);
+  }
+
+  /* Custom URL input */
+  .custom-input-row {
+    display: flex; gap: 10px; justify-content: center; align-items: center;
+    margin-bottom: 24px; flex-wrap: wrap; display: none;
+  }
+  .custom-input-row.visible { display: flex; }
+  .custom-input-row input {
+    background: var(--card-bg); border: 1px solid var(--card-border); color: var(--text);
+    font-family: 'DM Mono', monospace; font-size: 0.9rem;
+    padding: 12px 18px; border-radius: 8px; width: 400px; max-width: 75vw;
+    direction: ltr; text-align: left; outline: none; transition: border-color 0.3s;
+  }
+  .custom-input-row input::placeholder { color: var(--text-dim); }
+  .custom-input-row input:focus { border-color: var(--gold-dim); }
+
+  .btn {
+    font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 700;
+    background: linear-gradient(135deg, var(--gold), var(--gold-dim));
+    color: var(--bg); border: none; padding: 12px 28px; border-radius: 8px;
+    cursor: pointer; letter-spacing: 1px; transition: all 0.3s; position: relative; overflow: hidden;
+  }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(212,175,55,0.25); }
+  .btn:active { transform: translateY(0); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+  .btn .spinner {
+    display: none; width: 16px; height: 16px; border: 2px solid var(--bg);
+    border-top-color: transparent; border-radius: 50%;
+    animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle;
+  }
+  .btn.loading .spinner { display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Channel info */
+  .channel-info { text-align: center; margin-bottom: 28px; display: none; animation: fadeIn 0.5s ease; }
+  .channel-info.visible { display: block; }
+  .channel-name { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 700; color: var(--gold); margin-bottom: 4px; }
+  .channel-meta { font-size: 0.78rem; color: var(--text-dim); }
+
+  .status { text-align: center; margin-bottom: 24px; font-size: 0.82rem; color: var(--gold-dim); min-height: 22px; }
+  .error-msg { text-align: center; color: #e74c3c; font-size: 0.88rem; margin-bottom: 20px; display: none; }
+  .error-msg.visible { display: block; }
+
+  /* Grid */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(520px, 1fr)); gap: 24px; }
+  @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px;
+    padding: 28px; position: relative; overflow: hidden;
+    opacity: 0; transform: translateY(30px);
+    transition: opacity 0.6s ease, transform 0.6s ease, border-color 0.3s, box-shadow 0.3s;
+  }
+  .card.visible { opacity: 1; transform: translateY(0); }
+  .card:hover { border-color: var(--gold-dim); box-shadow: 0 8px 40px rgba(212,175,55,0.08); }
+  .card::before {
+    content: ''; position: absolute; top: 0; right: 0; width: 100%; height: 3px;
+    background: linear-gradient(90deg, var(--gold), transparent);
+  }
+  .card-number {
+    font-family: 'Playfair Display', serif; font-size: 3.2rem; font-weight: 900;
+    color: rgba(212,175,55,0.08); position: absolute; top: 10px; left: 18px; line-height: 1;
+  }
+  .card-date { font-size: 0.72rem; color: var(--gold-dim); margin-bottom: 10px; }
+  .card-channel { font-size: 0.7rem; color: var(--text-dim); margin-bottom: 6px; }
+  .card-title {
+    font-family: 'Playfair Display', serif; font-size: 1.15rem; font-weight: 700;
+    color: var(--gold-light); margin-bottom: 14px; line-height: 1.4;
+  }
+  .card-title a { color: inherit; text-decoration: none; }
+  .card-title a:hover { text-decoration: underline; }
+  .section { margin-bottom: 16px; }
+  .section-label {
+    font-size: 0.68rem; text-transform: uppercase; letter-spacing: 2px;
+    color: var(--gold); margin-bottom: 6px; font-weight: 500;
+  }
+  .section-content { font-size: 0.85rem; color: var(--text-dim); line-height: 1.7; }
+  .section-content ul { list-style: none; padding: 0; }
+  .section-content ul li { padding: 3px 0; padding-right: 16px; position: relative; }
+  .section-content ul li::before { content: '▸'; position: absolute; right: 0; color: var(--gold-dim); }
+
+  /* Conclusions panel */
+  .conclusions-panel { display: none; }
+  .conclusions-panel.visible { display: block; }
+  .conclusion-section {
+    background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px;
+    padding: 28px; margin-bottom: 20px; position: relative; overflow: hidden;
+    opacity: 0; transform: translateY(20px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  .conclusion-section.visible { opacity: 1; transform: translateY(0); }
+  .conclusion-section::before {
+    content: ''; position: absolute; top: 0; right: 0; width: 100%; height: 3px;
+    background: linear-gradient(90deg, var(--gold-light), var(--gold), transparent);
+  }
+  .conclusion-title {
+    font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 700;
+    color: var(--gold-light); margin-bottom: 16px;
+  }
+  .conclusion-content { font-size: 0.88rem; color: var(--text-dim); line-height: 1.8; }
+  .conclusion-content ul { list-style: none; padding: 0; }
+  .conclusion-content ul li { padding: 5px 0 5px 0; padding-right: 18px; position: relative; }
+  .conclusion-content ul li::before { content: '◆'; position: absolute; right: 0; color: var(--gold); font-size: 0.7rem; top: 8px; }
+  .no-data-msg {
+    text-align: center; color: var(--text-dim); font-size: 0.9rem; padding: 60px 20px;
+  }
+
+  /* Top action bar */
+  .top-bar {
+    display: flex; gap: 10px; justify-content: center; align-items: center;
+    margin-bottom: 20px; flex-wrap: wrap;
+  }
+  .top-bar .btn-conclusions {
+    font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 700;
+    background: transparent; border: 2px solid var(--gold);
+    color: var(--gold); padding: 12px 32px; border-radius: 8px;
+    cursor: pointer; letter-spacing: 1px; transition: all 0.3s;
+  }
+  .top-bar .btn-conclusions:hover {
+    background: linear-gradient(135deg, var(--gold), var(--gold-dim));
+    color: var(--bg); transform: translateY(-2px); box-shadow: 0 8px 32px rgba(212,175,55,0.25);
+  }
+  .top-bar .btn-conclusions.active {
+    background: linear-gradient(135deg, var(--gold), var(--gold-dim));
+    color: var(--bg);
+  }
+  .btn-run-all {
+    font-family: 'DM Mono', monospace; font-size: 0.85rem; font-weight: 500;
+    background: var(--card-bg); border: 1px solid var(--gold-dim);
+    color: var(--gold-light); padding: 12px 24px; border-radius: 8px;
+    cursor: pointer; transition: all 0.3s;
+  }
+  .btn-run-all:hover {
+    border-color: var(--gold); background: #1a1a1a; transform: translateY(-1px);
+  }
+  .btn-run-all:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .btn-run-all .spinner {
+    display: none; width: 14px; height: 14px; border: 2px solid var(--gold-light);
+    border-top-color: transparent; border-radius: 50%;
+    animation: spin 0.8s linear infinite; margin-right: 6px; vertical-align: middle;
+  }
+  .btn-run-all.loading .spinner { display: inline-block; }
+
+  .run-all-progress {
+    text-align: center; font-size: 0.78rem; color: var(--gold-dim); margin-bottom: 16px;
+    min-height: 20px;
+  }
+  .progress-bar-wrap {
+    max-width: 400px; margin: 8px auto 0; height: 4px; background: var(--card-border);
+    border-radius: 2px; overflow: hidden; display: none;
+  }
+  .progress-bar-wrap.visible { display: block; }
+  .progress-bar {
+    height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold-light));
+    border-radius: 2px; transition: width 0.4s ease; width: 0%;
+  }
+
+  /* Market Dashboard */
+  .dashboard-toggle {
+    font-family: 'DM Mono', monospace; font-size: 0.85rem; font-weight: 500;
+    background: var(--card-bg); border: 1px solid var(--gold-dim);
+    color: var(--gold-light); padding: 12px 24px; border-radius: 8px;
+    cursor: pointer; transition: all 0.3s;
+  }
+  .dashboard-toggle:hover { border-color: var(--gold); background: #1a1a1a; transform: translateY(-1px); }
+  .dashboard-toggle.active { background: linear-gradient(135deg, var(--gold), var(--gold-dim)); color: var(--bg); border-color: var(--gold); }
+  .dashboard-wrap {
+    display: none; margin-bottom: 24px; animation: fadeIn 0.4s ease;
+  }
+  .dashboard-wrap.visible { display: block; }
+  .dashboard-header {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;
+  }
+  .dashboard-title {
+    font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 700; color: var(--gold);
+  }
+  .dashboard-updated {
+    font-size: 0.68rem; color: var(--text-dim);
+  }
+  .dashboard-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px;
+  }
+  .dash-card {
+    background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px;
+    padding: 12px 14px; transition: border-color 0.3s;
+  }
+  .dash-card:hover { border-color: var(--gold-dim); }
+  .dash-card .label {
+    font-size: 0.68rem; color: var(--text-dim); margin-bottom: 4px; display: flex; align-items: center; gap: 6px;
+  }
+  .dash-card .label .flag { font-size: 0.85rem; }
+  .dash-card .price {
+    font-family: 'Playfair Display', serif; font-size: 1.25rem; font-weight: 700; color: var(--text);
+    direction: ltr; text-align: right;
+  }
+  .dash-card .change {
+    font-size: 0.72rem; font-weight: 600; direction: ltr; text-align: right; margin-top: 2px;
+  }
+  .dash-card .change.up { color: #4CAF50; }
+  .dash-card .change.down { color: #e74c3c; }
+  .dash-card .change.flat { color: var(--text-dim); }
+  .dash-card.loading .price { color: var(--text-dim); }
+  .dash-refresh {
+    font-family: 'DM Mono', monospace; font-size: 0.72rem;
+    background: transparent; border: 1px solid var(--card-border); color: var(--gold-dim);
+    padding: 4px 12px; border-radius: 4px; cursor: pointer; transition: all 0.3s;
+  }
+  .dash-refresh:hover { border-color: var(--gold); color: var(--gold-light); }
+  .dash-refresh:disabled { opacity: 0.4; cursor: not-allowed; }
+  .dash-section-label {
+    font-size: 0.62rem; color: var(--gold-dim); text-transform: uppercase; letter-spacing: 2px;
+    margin: 12px 0 6px; padding-bottom: 4px; border-bottom: 1px solid #1a1a1a;
+  }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+  .footer {
+    text-align: center; margin-top: 48px; padding-top: 20px;
+    border-top: 1px solid var(--card-border); font-size: 0.72rem; color: var(--text-dim);
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <div class="logo">YouTS</div>
+    <div class="tagline">Editorial Intelligence · YouTube → Insights</div>
+  </div>
+
+  <div class="top-bar">
+    <button class="dashboard-toggle" id="dashToggle" onclick="toggleDashboard()">
+      📊 דאשבורד שוק
+    </button>
+    <button class="btn-run-all" id="runAllBtn" onclick="runAllChannels()">
+      <span class="spinner"></span> טען את כל הערוצים
+    </button>
+    <button class="btn-conclusions" id="conclusionsBtn" onclick="switchTab('conclusions')">
+      מסקנות
+    </button>
+  </div>
+
+  <!-- Market Dashboard -->
+  <div class="dashboard-wrap" id="dashboardWrap">
+    <div class="dashboard-header">
+      <div class="dashboard-title">נתוני שוק בזמן אמת</div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="dashboard-updated" id="dashUpdated"></div>
+        <button class="dash-refresh" id="dashRefreshBtn" onclick="refreshDashboard()">🔄 עדכן</button>
+      </div>
+    </div>
+
+    <div class="dash-section-label">שערי חליפין</div>
+    <div class="dashboard-grid" id="dashFx"></div>
+
+    <div class="dash-section-label">מדדים מובילים</div>
+    <div class="dashboard-grid" id="dashIndices"></div>
+
+    <div class="dash-section-label">אג״ח ותנודתיות</div>
+    <div class="dashboard-grid" id="dashBonds"></div>
+
+    <div class="dash-section-label">סחורות וקריפטו</div>
+    <div class="dashboard-grid" id="dashCommodities"></div>
+  </div>
+
+  <div class="run-all-progress" id="runAllProgress"></div>
+  <div class="progress-bar-wrap" id="progressBarWrap"><div class="progress-bar" id="progressBar"></div></div>
+
+  <div class="tabs-wrap">
+    <div class="tabs" id="tabs"></div>
+  </div>
+
+  <div class="custom-input-row" id="customRow">
+    <input type="text" id="customInput" placeholder="https://www.youtube.com/@ChannelName" />
+    <button class="btn" id="customBtn" onclick="loadCustomChannel()">
+      <span class="spinner"></span> YouTS
+    </button>
+  </div>
+
+  <div class="channel-info" id="channelInfo">
+    <div class="channel-name" id="channelName"></div>
+    <div class="channel-meta" id="channelMeta"></div>
+  </div>
+
+  <div class="error-msg" id="errorMsg"></div>
+  <div class="status" id="status"></div>
+
+  <div class="grid" id="grid"></div>
+  <div class="conclusions-panel" id="conclusionsPanel"></div>
+
+  <div class="footer">YouTS — כל הזכויות שמורות © 2025</div>
+</div>
+
+<script>
+// ——— Channel Registry ———
+var CHANNELS = [
+  { id: 'micha', label: 'מיכה סטוקס', handle: 'Micha.Stocks', cat: 'storytelling' },
+  { id: 'jamesjani', label: 'James Jani', handle: 'JamesJani', cat: 'storytelling' },
+  { id: 'magnates', label: 'MagnatesMedia', handle: 'MagnatesMedia', cat: 'storytelling' },
+  { id: 'moon', label: 'Moon', handle: 'MoonReal', cat: 'storytelling' },
+  { id: 'coldfusion', label: 'ColdFusion', handle: 'ColdFusion', cat: 'storytelling' },
+  { id: 'finedu', label: 'Financial Education', handle: 'FinancialEducation', cat: 'investing' },
+  { id: 'graham', label: 'Graham Stephan', handle: 'GrahamStephan', cat: 'investing' },
+  { id: 'plainbagel', label: 'The Plain Bagel', handle: 'ThePlainBagel', cat: 'investing' },
+  { id: 'letstalk', label: "Let's Talk Money", handle: 'josephhogue', cat: 'investing' },
+  { id: 'bloomberg', label: 'Bloomberg', handle: 'markets', cat: 'macro' },
+  { id: 'yahoo', label: 'Yahoo Finance', handle: 'YahooFinance', cat: 'macro' }
+];
+
+var PROXIES = [
+  'https://corsproxy.io/?url=',
+  'https://api.allorigins.win/raw?url=',
+  'https://api.codetabs.com/v1/proxy?quest='
+];
+
+async function fetchViaProxy(url) {
+  var lastErr = null;
+  // Try cors.eu.org first (direct URL append, no encode)
+  try {
+    var resp0 = await fetch('https://cors.eu.org/' + url);
+    if (resp0.ok) return await resp0.text();
+  } catch(e) { lastErr = e; }
+  // Then try encoded proxies
+  for (var p = 0; p < PROXIES.length; p++) {
+    try {
+      var resp = await fetch(PROXIES[p] + encodeURIComponent(url));
+      if (resp.ok) return await resp.text();
+      lastErr = new Error('HTTP ' + resp.status);
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw lastErr || new Error('כל ה-proxies נכשלו');
+}
+
+// channelData[tabId] = { channelName, channelMeta, videos[], articles[] }
+var channelData = {};
+var failedTabs = {}; // tabId -> error message
+var activeTab = '';
+var loadingTab = '';
+
+// ——— Init tabs ———
+function initTabs() {
+  var container = document.getElementById('tabs');
+  container.innerHTML = '';
+
+  CHANNELS.forEach(function(ch) {
+    var t = document.createElement('div');
+    t.className = 'tab';
+    t.id = 'tab-' + ch.id;
+    t.textContent = ch.label;
+    t.onclick = function() { switchTab(ch.id); };
+    container.appendChild(t);
+  });
+
+  // Custom tab
+  var ct = document.createElement('div');
+  ct.className = 'tab';
+  ct.id = 'tab-custom';
+  ct.textContent = '+ ערוץ חופשי';
+  ct.onclick = function() { switchTab('custom'); };
+  container.appendChild(ct);
+}
+
+function switchTab(tabId) {
+  activeTab = tabId;
+
+  // Update tab styles
+  document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+  var tabEl = document.getElementById('tab-' + tabId);
+  if (tabEl) tabEl.classList.add('active');
+
+  // Update conclusions button highlight
+  var concBtn = document.getElementById('conclusionsBtn');
+  if (tabId === 'conclusions') concBtn.classList.add('active');
+  else concBtn.classList.remove('active');
+
+  // Show/hide custom input
+  var customRow = document.getElementById('customRow');
+  customRow.classList.toggle('visible', tabId === 'custom');
+
+  clearError();
+  setStatus('');
+
+  if (tabId === 'conclusions') {
+    document.getElementById('grid').style.display = 'none';
+    document.getElementById('channelInfo').classList.remove('visible');
+    renderConclusions();
+    return;
+  }
+
+  document.getElementById('grid').style.display = '';
+  document.getElementById('conclusionsPanel').classList.remove('visible');
+
+  if (channelData[tabId]) {
+    showChannelData(tabId);
+  } else if (tabId !== 'custom') {
+    loadPresetChannel(tabId);
+  } else {
+    document.getElementById('grid').innerHTML = '';
+    document.getElementById('channelInfo').classList.remove('visible');
+  }
+}
+
+function showChannelData(tabId) {
+  var d = channelData[tabId];
+  document.getElementById('channelName').textContent = d.channelName;
+  document.getElementById('channelMeta').textContent = d.channelMeta;
+  document.getElementById('channelInfo').classList.add('visible');
+
+  if (d.noRecentVideos) {
+    showNoRecentVideos(d.channelName);
+  } else {
+    renderCards(d.videos, d.articles);
+  }
+}
+
+function showNoRecentVideos(channelName) {
+  var grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  grid.style.display = '';
+  document.getElementById('conclusionsPanel').classList.remove('visible');
+  grid.innerHTML = '<div style="text-align:center;padding:60px 20px;">' +
+    '<div style="font-size:3rem;margin-bottom:16px;opacity:0.3;">📭</div>' +
+    '<div style="font-family:Playfair Display,serif;font-size:1.3rem;color:var(--gold);margin-bottom:10px;">אין פרסום</div>' +
+    '<div style="font-size:0.85rem;color:var(--text-dim);max-width:400px;margin:0 auto;line-height:1.6;">' +
+    'לא פורסמו סרטונים חדשים ב-3 הימים האחרונים בערוץ <strong style="color:var(--text);">' + escapeHtml(channelName) + '</strong>' +
+    '</div></div>';
+}
+
+function markTabLoaded(tabId) {
+  var el = document.getElementById('tab-' + tabId);
+  if (el) el.classList.add('has-data');
+}
+
+// ——— Helpers ———
+function escapeHtml(t) { var d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+function setStatus(msg) { document.getElementById('status').textContent = msg; }
+function showError(msg) { var el = document.getElementById('errorMsg'); el.textContent = msg; el.classList.add('visible'); }
+function clearError() { document.getElementById('errorMsg').classList.remove('visible'); }
+
+function setTabLoading(tabId, on) {
+  loadingTab = on ? tabId : '';
+  var btn = document.getElementById('customBtn');
+  if (btn) { btn.disabled = on; if (on) btn.classList.add('loading'); else btn.classList.remove('loading'); }
+}
+
+function isHebrew(text) { return /[\u0590-\u05FF]/.test(text); }
+
+// ——— Fetch channel ———
+async function fetchChannelId(handle) {
+  var pageUrl = 'https://www.youtube.com/@' + handle;
+  var html = await fetchViaProxy(pageUrl);
+
+  var cidMatch = html.match(/\"channelId\":\"(UC[\w\-]+)\"/) ||
+                 html.match(/channel_id=(UC[\w\-]+)/) ||
+                 html.match(/\"externalId\":\"(UC[\w\-]+)\"/);
+  if (!cidMatch) throw new Error('לא הצלחתי למצוא את מזהה הערוץ');
+
+  var nameMatch = html.match(/<title>([^<]+)<\/title>/);
+  var name = handle;
+  if (nameMatch) name = nameMatch[1].replace(' - YouTube', '').trim();
+
+  var subMatch = html.match(/\"subscriberCountText\":\{\"simpleText\":\"([^\"]+)\"\}/);
+  var subs = subMatch ? subMatch[1] : '';
+
+  return { channelId: cidMatch[1], name: name, subscribers: subs };
+}
+
+async function fetchChannelInfoFromUrl(url) {
+  var handle = '';
+  var directId = '';
+  var hm = url.match(/@([\w.\-]+)/);
+  if (hm) handle = hm[1];
+  var cm = url.match(/\/channel\/(UC[\w\-]+)/);
+  if (cm) directId = cm[1];
+  if (!handle && !directId) {
+    var um = url.match(/\/(c|user)\/([\w.\-]+)/);
+    if (um) handle = um[2];
+  }
+  if (!handle && !directId && !url.includes('/')) {
+    handle = url.trim().replace(/^@/, '');
+  }
+  if (directId) return { channelId: directId, name: directId, subscribers: '' };
+  if (!handle) throw new Error('לא הצלחתי לזהות את הערוץ מהקישור');
+  return await fetchChannelId(handle);
+}
+
+async function fetchLatestVideos(channelId) {
+  var feedUrl = 'https://www.youtube.com/feeds/videos.xml?channel_id=' + channelId;
+  var xml = await fetchViaProxy(feedUrl);
+  var parser = new DOMParser();
+  var doc = parser.parseFromString(xml, 'text/xml');
+  var entries = doc.querySelectorAll('entry');
+  var videos = [];
+  // Only include videos from the last 3 days
+  var now = new Date();
+  var threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+  var count = Math.min(entries.length, 15); // scan more entries to find recent ones
+  for (var i = 0; i < count; i++) {
+    var entry = entries[i];
+    var publishedEl = entry.querySelector('published');
+    var dateStr = publishedEl ? publishedEl.textContent : '';
+    if (!dateStr) continue;
+    var pubDate = new Date(dateStr);
+    if (pubDate < threeDaysAgo) continue; // skip old videos
+
+    var videoId = '';
+    var vidIdEl = entry.querySelector('videoId');
+    if (vidIdEl) videoId = vidIdEl.textContent;
+    else {
+      var link = entry.querySelector('link');
+      if (link) { var vm = (link.getAttribute('href') || '').match(/v=([\w\-]+)/); if (vm) videoId = vm[1]; }
+    }
+    var titleEl = entry.querySelector('title');
+    var title = titleEl ? titleEl.textContent : 'ללא כותרת';
+    var date = dateStr.substring(0, 10);
+    var views = '';
+    var mediaGroup = entry.getElementsByTagName('media:group')[0];
+    if (mediaGroup) {
+      var community = mediaGroup.getElementsByTagName('media:community')[0];
+      if (community) { var stats = community.getElementsByTagName('media:statistics')[0]; if (stats) views = stats.getAttribute('views') || ''; }
+    }
+    videos.push({ id: videoId, title: title, url: 'https://www.youtube.com/watch?v=' + videoId, date: date, views: views ? Number(views).toLocaleString() + ' צפיות' : '' });
+    if (videos.length >= 4) break; // max 4 recent videos
+  }
+  // Return empty array instead of throwing — caller handles "no recent videos"
+  return videos;
+}
+
+// ——— Article Generator ———
+function detectTopics(title) {
+  var topics = [];
+  var lower = title.toLowerCase();
+  var patterns = [
+    { keys: ['ai', 'בינה מלאכותית', 'artificial intelligence', 'gpt', 'llm', 'machine learning'], topic: 'AI' },
+    { keys: ['nvidia', 'נבידיה', 'nvda'], topic: 'NVIDIA' },
+    { keys: ['market', 'שוק', 'מניות', 'stocks', 'stock', 'בורסה', 's&p', 'nasdaq', 'דאו', 'dow'], topic: 'MARKET' },
+    { keys: ['crypto', 'bitcoin', 'ביטקוין', 'ethereum', 'קריפטו', 'btc', 'eth'], topic: 'CRYPTO' },
+    { keys: ['fed', 'ריבית', 'interest rate', 'powell', 'פאול', 'federal reserve', 'inflation', 'אינפלציה'], topic: 'FED' },
+    { keys: ['tesla', 'טסלה', 'tsla', 'musk', 'מאסק'], topic: 'TESLA' },
+    { keys: ['apple', 'אפל', 'aapl', 'iphone'], topic: 'APPLE' },
+    { keys: ['earnings', 'דוח', 'רבעוני', 'quarterly', 'revenue', 'הכנסות', 'profit', 'רווח', 'דוחות'], topic: 'EARNINGS' },
+    { keys: ['crash', 'נפילה', 'ירידה', 'drop', 'correction', 'תיקון', 'bear', 'דובי'], topic: 'CORRECTION' },
+    { keys: ['opportunity', 'הזדמנות', 'buy', 'לקנות', 'rally', 'עלייה', 'bull', 'שורי'], topic: 'OPPORTUNITY' },
+    { keys: ['recession', 'מיתון', 'unemployment', 'אבטלה', 'crisis', 'משבר'], topic: 'RECESSION' },
+    { keys: ['geopolit', 'גיאופולית', 'war', 'מלחמה', 'china', 'סין', 'tariff', 'מכס'], topic: 'GEOPOLITICS' },
+    { keys: ['oil', 'נפט', 'gas', 'גז', 'energy', 'אנרגיה', 'opec'], topic: 'ENERGY' },
+    { keys: ['gold', 'זהב', 'silver', 'כסף', 'commodity', 'סחורות'], topic: 'COMMODITIES' },
+    { keys: ['real estate', 'נדל"ן', 'housing', 'דיור', 'mortgage', 'משכנתא'], topic: 'REALESTATE' },
+    { keys: ['bond', 'אג"ח', 'yield', 'תשואה', 'treasury', 'אוצר'], topic: 'BONDS' },
+    { keys: ['dividend', 'דיבידנד', 'passive', 'פסיבי', 'income', 'הכנסה'], topic: 'DIVIDEND' },
+    { keys: ['volatility', 'תנודתיות', 'vix', 'risk', 'סיכון'], topic: 'VOLATILITY' }
+  ];
+  patterns.forEach(function(p) { p.keys.forEach(function(k) { if (lower.includes(k) && topics.indexOf(p.topic) === -1) topics.push(p.topic); }); });
+  if (topics.length === 0) topics.push('MARKET');
+  return topics;
+}
+
+// ——— Ticker & Sentiment extraction for analytics ———
+var TICKER_DB = [
+  { patterns: ['nvda', 'nvidia', 'נבידיה'], ticker: 'NVDA', name: 'NVIDIA', sector: 'AI / Semiconductors' },
+  { patterns: ['aapl', 'apple', 'אפל'], ticker: 'AAPL', name: 'Apple', sector: 'Big Tech' },
+  { patterns: ['tsla', 'tesla', 'טסלה'], ticker: 'TSLA', name: 'Tesla', sector: 'EV / Energy' },
+  { patterns: ['msft', 'microsoft', 'מיקרוסופט'], ticker: 'MSFT', name: 'Microsoft', sector: 'Big Tech / AI' },
+  { patterns: ['googl', 'goog', 'google', 'alphabet', 'גוגל'], ticker: 'GOOGL', name: 'Alphabet', sector: 'Big Tech / AI' },
+  { patterns: ['amzn', 'amazon', 'אמזון'], ticker: 'AMZN', name: 'Amazon', sector: 'Big Tech / Cloud' },
+  { patterns: ['meta', 'facebook', 'פייסבוק', 'מטא'], ticker: 'META', name: 'Meta', sector: 'Big Tech / AI' },
+  { patterns: ['amd'], ticker: 'AMD', name: 'AMD', sector: 'Semiconductors' },
+  { patterns: ['smci', 'super micro'], ticker: 'SMCI', name: 'Super Micro', sector: 'AI Infrastructure' },
+  { patterns: ['pltr', 'palantir', 'פלנטיר'], ticker: 'PLTR', name: 'Palantir', sector: 'AI / Data' },
+  { patterns: ['coin', 'coinbase'], ticker: 'COIN', name: 'Coinbase', sector: 'Crypto' },
+  { patterns: ['btc', 'bitcoin', 'ביטקוין'], ticker: 'BTC', name: 'Bitcoin', sector: 'Crypto' },
+  { patterns: ['eth', 'ethereum', 'את\'ריום'], ticker: 'ETH', name: 'Ethereum', sector: 'Crypto' },
+  { patterns: ['spy', 's&p 500', 's&p', 'אס אנד פי'], ticker: 'SPY', name: 'S&P 500', sector: 'Index' },
+  { patterns: ['qqq', 'nasdaq', 'נאסד"ק'], ticker: 'QQQ', name: 'Nasdaq 100', sector: 'Index' },
+  { patterns: ['dia', 'dow jones', 'דאו ג\'ונס', 'דאו'], ticker: 'DIA', name: 'Dow Jones', sector: 'Index' },
+  { patterns: ['vix', 'תנודתיות'], ticker: 'VIX', name: 'VIX', sector: 'Volatility' },
+  { patterns: ['soxx'], ticker: 'SOXX', name: 'Semiconductors ETF', sector: 'Semiconductors' },
+  { patterns: ['arkk', 'ark invest', 'cathie wood', 'קאתי'], ticker: 'ARKK', name: 'ARK Innovation', sector: 'Innovation' },
+  { patterns: ['gold', 'זהב', 'gld'], ticker: 'GLD', name: 'Gold', sector: 'Commodities' },
+  { patterns: ['oil', 'נפט', 'wti', 'brent', 'uso'], ticker: 'OIL', name: 'Crude Oil', sector: 'Commodities' },
+  { patterns: ['tlt', 'treasury', 'אג"ח ממשלתי'], ticker: 'TLT', name: 'US Treasuries 20Y+', sector: 'Bonds' },
+  { patterns: ['jpm', 'jpmorgan', 'ג\'יי פי מורגן'], ticker: 'JPM', name: 'JPMorgan', sector: 'Financials' },
+  { patterns: ['bac', 'bank of america'], ticker: 'BAC', name: 'Bank of America', sector: 'Financials' },
+  { patterns: ['gs', 'goldman'], ticker: 'GS', name: 'Goldman Sachs', sector: 'Financials' },
+  { patterns: ['crm', 'salesforce'], ticker: 'CRM', name: 'Salesforce', sector: 'Cloud / AI' },
+  { patterns: ['snow', 'snowflake'], ticker: 'SNOW', name: 'Snowflake', sector: 'Cloud / Data' },
+  { patterns: ['arm'], ticker: 'ARM', name: 'ARM Holdings', sector: 'Semiconductors' },
+  { patterns: ['avgo', 'broadcom'], ticker: 'AVGO', name: 'Broadcom', sector: 'Semiconductors' },
+  { patterns: ['cost', 'costco'], ticker: 'COST', name: 'Costco', sector: 'Consumer' },
+  { patterns: ['nflx', 'netflix', 'נטפליקס'], ticker: 'NFLX', name: 'Netflix', sector: 'Entertainment' },
+  { patterns: ['dis', 'disney', 'דיסני'], ticker: 'DIS', name: 'Disney', sector: 'Entertainment' },
+  { patterns: ['baba', 'alibaba', 'עליבאבא'], ticker: 'BABA', name: 'Alibaba', sector: 'China Tech' },
+  { patterns: ['tcehy', 'tencent', 'טנסנט'], ticker: 'TCEHY', name: 'Tencent', sector: 'China Tech' },
+  { patterns: ['xom', 'exxon'], ticker: 'XOM', name: 'ExxonMobil', sector: 'Energy' },
+  { patterns: ['cvx', 'chevron'], ticker: 'CVX', name: 'Chevron', sector: 'Energy' }
+];
+
+function detectTickers(title) {
+  var lower = title.toLowerCase();
+  var found = [];
+  TICKER_DB.forEach(function(t) {
+    t.patterns.forEach(function(p) {
+      if (lower.includes(p) && !found.some(function(f) { return f.ticker === t.ticker; })) {
+        found.push({ ticker: t.ticker, name: t.name, sector: t.sector });
+      }
+    });
+  });
+  return found;
+}
+
+function detectSentiment(title) {
+  var lower = title.toLowerCase();
+  var bullish = ['rally', 'surge', 'soar', 'boom', 'breakout', 'opportunity', 'buy', 'bull',
+    'עלייה', 'שורי', 'הזדמנות', 'לקנות', 'פריצה', 'זינוק', 'שיא', 'record', 'all-time high',
+    'growth', 'צמיחה', 'profit', 'רווח', 'beat', 'הפתעה חיובית', 'חיובי', 'bullish',
+    'recovery', 'התאוששות', 'rebound', 'surge'];
+  var bearish = ['crash', 'drop', 'fall', 'bear', 'recession', 'crisis', 'bubble', 'sell',
+    'נפילה', 'דובי', 'מיתון', 'משבר', 'בועה', 'למכור', 'ירידה', 'warning', 'אזהרה',
+    'risk', 'סיכון', 'danger', 'סכנה', 'overvalued', 'יקר מדי', 'correction', 'תיקון',
+    'collapse', 'קריסה', 'fear', 'פחד', 'bearish', 'dump'];
+
+  var bScore = 0;
+  var beScore = 0;
+  bullish.forEach(function(w) { if (lower.includes(w)) bScore++; });
+  bearish.forEach(function(w) { if (lower.includes(w)) beScore++; });
+
+  if (bScore > beScore) return 'bullish';
+  if (beScore > bScore) return 'bearish';
+  return 'neutral';
+}
+
+function getSentimentEmoji(s) {
+  if (s === 'bullish') return '🟢';
+  if (s === 'bearish') return '🔴';
+  return '⚪';
+}
+
+function getSentimentLabel(s) {
+  if (s === 'bullish') return 'חיובי';
+  if (s === 'bearish') return 'שלילי';
+  return 'ניטרלי';
+}
+
+// ——— Hebrew article templates ———
+var HEB = {
+  tldr: {
+    'AI': 'התפתחויות משמעותיות בתחום הבינה המלאכותית מציבות אתגרים והזדמנויות חדשות למשקיעים. הסקטור ממשיך להוביל את הצמיחה בשוק, אך נדרשת סלקטיביות גבוהה.',
+    'NVIDIA': 'נבידיה ממשיכה להוביל את מהפכת ה-AI עם ביקוש חסר תקדים לשבבים. השאלה המרכזית היא האם ההערכות הנוכחיות כבר מגלמות את פוטנציאל הצמיחה.',
+    'MARKET': 'השוק נמצא בנקודת מפנה עם מספר גורמים מאקרו שמשפיעים על הכיוון. ניתוח מעמיק של הנתונים מצביע על כמה מגמות מפתח שחשוב לעקוב אחריהן.',
+    'CRYPTO': 'שוק הקריפטו חווה תנודות משמעותיות על רקע שינויים רגולטוריים ומאקרו-כלכליים. הביקוש המוסדי ממשיך לגדול, אך הסיכונים עדיין גבוהים.',
+    'FED': 'מדיניות הפד ממשיכה להשפיע באופן ישיר על כל שוקי ההון. ההחלטות הקרובות צפויות לקבוע את הכיוון לחודשים הבאים.',
+    'TESLA': 'טסלה ממשיכה להוות אחת המניות הפולריזנטיות בשוק. בין חדשנות טכנולוגית לאתגרים תפעוליים, המניה מציבה דילמה מעניינת למשקיעים.',
+    'CORRECTION': 'השוק חווה תיקון שמעלה שאלות לגבי הכיוון הבא. ניתוח היסטורי מראה שתיקונים כאלה יכולים להיות הזדמנות, אך נדרשת זהירות.',
+    'OPPORTUNITY': 'מתגלות הזדמנויות השקעה מעניינות בשוק הנוכחי. סינון חכם של הרעש יכול לחשוף פוזיציות עם יחס סיכוי-סיכון אטרקטיבי.',
+    'RECESSION': 'אינדיקטורים כלכליים מעלים חששות לגבי האטה משמעותית. ההיסטוריה מלמדת שהכנה מוקדמת היא המפתח להתמודדות עם תקופות כאלה.',
+    'GEOPOLITICS': 'מתיחויות גיאופוליטיות מוסיפות שכבת אי-ודאות לשווקים. משקיעים נדרשים לשקול תרחישים מרובים בבניית האסטרטגיה שלהם.',
+    'ENERGY': 'שוק האנרגיה נמצא בנקודת מפנה עם שינויים מבניים בהיצע ובביקוש. ההשלכות חורגות הרבה מעבר לסקטור האנרגיה עצמו.',
+    'COMMODITIES': 'שוק הסחורות מראה מגמות מעניינות שמשקפות שינויים מאקרו-כלכליים רחבים. הבנה של הדינמיקה חיונית לבניית תיק מגוון.',
+    'BONDS': 'שוק האג"ח שולח אותות חשובים לגבי הציפיות הכלכליות. התשואות הנוכחיות מציבות אלטרנטיבה רצינית למניות.',
+    'DIVIDEND': 'אסטרטגיית דיבידנדים חוזרת לקדמת הבמה בתנאי השוק הנוכחיים. בחירה נכונה של מניות דיבידנד יכולה לספק הכנסה יציבה וצמיחה.',
+    'VOLATILITY': 'רמות התנודתיות הנוכחיות דורשות התאמות באסטרטגיית ההשקעה. ניהול סיכונים נכון הופך לגורם המכריע בתקופה זו.',
+    'EARNINGS': 'עונת הדוחות חושפת את המצב האמיתי של החברות מאחורי הכותרות. הפערים בין ציפיות לתוצאות יוצרים הזדמנויות מסחר.',
+    'APPLE': 'אפל ממשיכה להיות אחת מאבני היסוד של תיקי השקעות רבים. ההתפתחויות האחרונות מעלות שאלות מעניינות לגבי הכיוון הבא.',
+    'REALESTATE': 'שוק הנדל"ן מציג דינמיקה מורכבת עם שינויים בריביות ובביקוש. ההשפעות מורגשות הן בשוק הפיזי והן בנדל"ן הנסחר.'
+  },
+  insights: {
+    'AI': ['המירוץ בתחום ה-AI מאיץ — חברות שלא יאמצו את הטכנולוגיה צפויות להישאר מאחור', 'ההשקעות ב-AI עוברות משלב ההייפ לשלב המימוש, עם דגש על ROI מוכח', 'הרגולציה בתחום צפויה להתהדק, מה שיצור יתרון לחברות עם תשתית קיימת'],
+    'NVIDIA': ['הביקוש לשבבי AI ממשיך לעלות על ההיצע, מה שתומך בצמיחה מתמשכת', 'התחרות מתעצמת עם כניסת שחקנים חדשים, אך היתרון הטכנולוגי עדיין משמעותי', 'המעבר למודלים מותאמים אישית מגדיל את שוק הכתובת עבור נבידיה'],
+    'MARKET': ['המומנטום בשוק מושפע ממספר גורמים מנוגדים שיוצרים סביבה מורכבת', 'סקטורים דפנסיביים מציגים חוזקה יחסית שמעידה על זהירות מוסדית', 'נתוני המאקרו מצביעים על כיוון שדורש התאמות בהקצאת הנכסים'],
+    'CRYPTO': ['האימוץ המוסדי של קריפטו יוצר רצפה חדשה למחירים', 'הרגולציה עוברת משלב ההתנגדות לשלב הגדרת המסגרת', 'הקורלציה עם שוקי ההון המסורתיים מצביעה על בשלות הולכת וגדלה'],
+    'FED': ['הציפיות לשינוי בריבית משפיעות על תמחור הנכסים לפני ההחלטה בפועל', 'הפער בין ציפיות השוק לתחזית הפד יוצר סיכון דו-כיווני', 'מדיניות צמצומית ממושכת עלולה ליצור הזדמנויות בנכסים שנפגעו'],
+    'TESLA': ['טסלה ממשיכה להוביל בחדשנות אך מתמודדת עם לחץ תחרותי גובר', 'שוק הרכב החשמלי עובר מצמיחת כמות לתחרות על רווחיות', 'הגיוון העסקי של טסלה מגדיל את פוטנציאל הצמיחה'],
+    'CORRECTION': ['תיקונים של 10-15% הם חלק טבעי ממחזורי שוק בריאים', 'הסנטימנט השלילי יוצר לרוב את ההזדמנויות הטובות ביותר לטווח ארוך', 'המפתח הוא להבחין בין תיקון טכני לבין שינוי מגמה מהותי'],
+    'OPPORTUNITY': ['הזדמנויות השקעה נוצרות כשיש פער בין תפיסת השוק לבין המציאות', 'סקטורים שנפגעו מעבר למה שמוצדק פונדמנטלית מציעים ערך', 'גישה ממוקדת ולא אמוציונלית היא המפתח לזיהוי הזדמנויות אמיתיות'],
+    'RECESSION': ['סימני האטה מופיעים לרוב חודשים לפני שהמיתון מתחיל רשמית', 'סקטורים שונים מגיבים בצורה שונה למיתון — יש מנצחים גם בתקופות קשות', 'נזילות וגמישות בתיק ההשקעות הם המפתח לניווט בתקופות אי-ודאות'],
+    'GEOPOLITICS': ['סיכונים גיאופוליטיים נוטים להיות זמניים בהשפעתם על השווקים', 'שרשראות אספקה עוברות ארגון מחדש שיוצר מנצחים ומפסידים חדשים', 'פיזור גיאוגרפי בתיק ההשקעות הופך לחשוב יותר מתמיד'],
+    'ENERGY': ['המעבר לאנרגיה נקייה מייצר ביקוש גם לאנרגיה מסורתית בתקופת המעבר', 'מחירי האנרגיה משפיעים על אינפלציה ובעקיפין על מדיניות מוניטרית', 'חברות אנרגיה עם תוכניות מעבר אמינות נהנות מפרמיית שוק'],
+    'COMMODITIES': ['מחירי הסחורות משמשים אינדיקטור מוביל לכיוון הכלכלה הגלובלית', 'חוסר האיזון בהיצע יוצר הזדמנויות מחזוריות בסחורות שונות', 'הדולר נשאר גורם מפתח בתמחור סחורות'],
+    'BONDS': ['עקום התשואות שולח מסרים חשובים על ציפיות הצמיחה', 'התשואות הנוכחיות הופכות אג"ח לחלופה אטרקטיבית למניות', 'משך חיים הוא מרכיב סיכון מרכזי שיש לנהל בזהירות'],
+    'DIVIDEND': ['חברות עם היסטוריית העלאת דיבידנד עקבית נוטות להניב ביצועים עודפים', 'שילוב דיבידנד וצמיחה מספק את האיזון האופטימלי לטווח ארוך', 'חשוב לוודא שיחס החלוקה בר-קיימא'],
+    'VOLATILITY': ['תנודתיות גבוהה היא חרב פיפיות — גם סיכון וגם הזדמנות', 'ניהול גודל פוזיציות חשוב יותר מבחירת הכיוון בתנאים כאלה', 'מכשירים לגידור סיכון הופכים לכלי חיוני'],
+    'EARNINGS': ['הפער בין ציפיות אנליסטים לתוצאות בפועל יוצר תנודות חדות', 'ההנחיות קדימה חשובות לא פחות מהתוצאות בפועל', 'מגמות מרווחיות הן האינדיקטור המוביל הטוב ביותר לכיוון המנייה'],
+    'APPLE': ['המערכת האקולוגית של אפל יוצרת נאמנות שמתורגמת להכנסות חוזרות', 'מעבר ל-AI והשירותים מגוון את מקורות ההכנסה', 'ההערכה הגבוהה מחייבת המשך חדשנות'],
+    'REALESTATE': ['שינויים בריבית משפיעים על תמחור נדל"ן בפיגור של 6-12 חודשים', 'עבודה מרחוק שינתה את הביקוש למשרדים באופן קבוע', 'נדל"ן למגורים נשאר חסין יחסית בזכות מחסור מבני']
+  },
+  howToApply: {
+    'AI': ['לבחון חשיפה ל-AI דרך ETF מגוון ולא רק מניות בודדות', 'לעקוב אחרי הוצאות CAPEX של חברות ה-AI הגדולות כאינדיקטור מוביל', 'לשלב ניתוח טכני עם פונדמנטלי כדי לתזמן כניסה לפוזיציה'],
+    'NVIDIA': ['לעקוב אחרי הזמנות של מרכזי נתונים כאינדיקטור מוביל', 'לשקול חשיפה דרך שרשרת האספקה', 'להגדיר רמות טייק-פרופיט ברורות בהתחשב בתנודתיות'],
+    'MARKET': ['לוודא פיזור נכון בין סקטורים ואזורים גיאוגרפיים', 'לשמור על נזילות מספקת לניצול הזדמנויות', 'לבחון מחדש את הקצאת הנכסים בהתאם לשינויי המאקרו'],
+    'CRYPTO': ['להגביל חשיפה לקריפטו לאחוז קטן מהתיק הכולל', 'להשתמש ב-DCA כאסטרטגיית כניסה', 'לפזר בין מטבעות שונים'],
+    'FED': ['לא להגיב באימפולס להחלטות ריבית', 'לשקול את ההשפעה על כל רכיבי התיק', 'להתכונן לתרחישים שונים עם אסטרטגיית ברבל'],
+    'TESLA': ['להגדיר מראש את גודל הפוזיציה', 'לעקוב אחרי נתוני מסירות רבעוניים', 'לשקול אופציות כדרך להגביל סיכון'],
+    'CORRECTION': ['להכין רשימת קניות מראש עם מחירי יעד', 'להיכנס בשלבים — לא לנסות לתפוס את התחתית', 'לבדוק שהתיק לא חשוף יתר לסקטור אחד'],
+    'OPPORTUNITY': ['לבצע בדיקת נאותות מעמיקה לפני כניסה', 'להגדיר סטופ-לוס ויעדי רווח לפני הכניסה', 'לוודא שההזדמנות מתאימה לפרופיל הסיכון'],
+    'RECESSION': ['להגדיל חשיפה לסקטורים דפנסיביים ולחברות עם מאזן חזק', 'לשמור על רזרבה מזומנים גדולה מהרגיל', 'לבחון מחדש את כל הפוזיציות ולהגדיר סטופים'],
+    'GEOPOLITICS': ['לא לבצע מהלכים דרסטיים על בסיס חדשות בלבד', 'לפזר גיאוגרפית כדי להפחית חשיפה', 'לשקול חשיפה לסחורות כגידור'],
+    'ENERGY': ['לשקול חשיפה מאוזנת לאנרגיה מסורתית ונקייה', 'לעקוב אחרי מלאי הנפט ותחזיות OPEC', 'להתחשב בהשפעת מחירי האנרגיה על שאר התיק'],
+    'COMMODITIES': ['להשתמש ב-ETF סחורות כרכיב גידור', 'לעקוב אחרי יחסי מחירי סחורות', 'לשקול חשיפה עקיפה דרך מניות יצרניות'],
+    'BONDS': ['להתאים את משך החיים הממוצע לציפיות הריבית', 'לשקול סולם אג"ח לפיזור סיכון', 'לבדוק מרווחי אשראי כאינדיקטור לסיכון'],
+    'DIVIDEND': ['לבנות תיק דיבידנדים מגוון סקטוריאלית', 'לבדוק את יציבות הדיבידנד ולא רק את גובהו', 'להשקיע מחדש דיבידנדים לריבית דריבית'],
+    'VOLATILITY': ['להקטין גודל פוזיציות בתקופות תנודתיות', 'לשקול אסטרטגיות אופציות לניהול סיכון', 'לא לקבל החלטות בימים של תנודות קיצוניות'],
+    'EARNINGS': ['לעקוב אחרי ציפיות אנליסטים לפני הדוח', 'לשקול הקטנת פוזיציה לפני דוח', 'להתמקד בהנחיות קדימה'],
+    'APPLE': ['לנתח את צמיחת מגזר השירותים', 'לעקוב אחרי מגמות מכירות באייפון', 'לשקול את אפל כאחזקת ליבה'],
+    'REALESTATE': ['לפזר חשיפה בין סגמנטים שונים', 'לעקוב אחרי שיעורי תפוסה וצמיחת שכירות', 'לשקול REITs כחלופה נזילה']
+  },
+  tools: {
+    'AI': ['מודלים של NLP ומכונת למידה', 'ניתוח סנטימנט בזמן אמת', 'גרפים של שרשרת ערך AI', 'מדדי אימוץ טכנולוגי'],
+    'NVIDIA': ['ניתוח מחזורי שבבים', 'מעקב אחרי הזמנות TSMC', 'השוואת מכפילים סקטוריאלית', 'ניתוח נתח שוק GPU'],
+    'MARKET': ['ניתוח טכני רב-מסגרת', 'מדד VIX ונגזרותיו', 'יחס Put/Call כמד סנטימנט', 'מפת חום סקטוריאלית'],
+    'CRYPTO': ['ניתוח On-Chain', 'מעקב אחרי ארנקי לווייתנים', 'מדד פחד וחמדנות קריפטו', 'השוואת ביצועי מטבעות'],
+    'FED': ['עקום התשואות וניתוח השטחה/תלילות', 'CME FedWatch Tool', 'מדדי אינפלציה ב-breakeven', 'ניתוח dot plot'],
+    'TESLA': ['נתוני מסירות רבעוניים', 'ניתוח נתח שוק EV', 'השוואת מרווחים תפעוליים', 'מעקב אחרי פטנטים'],
+    'CORRECTION': ['רמות תמיכה והתנגדות מפתח', 'ממוצעים נעים 50/200', 'מדד RSI ומומנטום', 'ניתוח נפחי מסחר'],
+    'OPPORTUNITY': ['סורק מניות לפי ערך', 'ניתוח DCF מהיר', 'השוואת מכפילים היסטוריים', 'מיפוי סנטימנט שוק'],
+    'RECESSION': ['מדד PMI ייצור ושירותים', 'תביעות אבטלה שבועיות', 'מדד LEI אינדיקטורים מובילים', 'פערי אשראי HY vs IG'],
+    'GEOPOLITICS': ['מדד סיכון גיאופוליטי', 'מחירי סחורות אסטרטגיות', 'מעקב אחרי שרשראות אספקה', 'ניתוח חשיפה גיאוגרפית'],
+    'ENERGY': ['מלאי נפט שבועי EIA', 'מעקב אחרי החלטות OPEC+', 'ניתוח crack spread', 'מגמות צריכת אנרגיה'],
+    'COMMODITIES': ['מדד Bloomberg Commodity', 'יחסי זהב-נחושת', 'עונתיות בסחורות', 'ניתוח Contango/Backwardation'],
+    'BONDS': ['עקום תשואות ממשלתי', 'מרווחי אשראי קונצרני', 'Duration ו-Convexity', 'ציפיות אינפלציה TIPS'],
+    'DIVIDEND': ['יחס חלוקת דיבידנד', 'היסטוריית העלאות רצופה', 'Dividend Yield vs Growth', 'ניתוח תזרים מזומנים חופשי'],
+    'VOLATILITY': ['מדד VIX ומבנה עתידי', 'Implied vs Realized Vol', 'סטיית תקן היסטורית', 'ניתוח סקיו באופציות'],
+    'EARNINGS': ['ציפיות EPS ו-Revenue', 'Earnings Whisper Number', 'השוואה רבעון מקביל', 'ניתוח הנחיות הנהלה'],
+    'APPLE': ['נתוני מכירות לפי מוצר', 'צמיחת מגזר שירותים', 'ניתוח ASP לאייפון', 'השוואת מכפילים vs FAANG'],
+    'REALESTATE': ['מדד שילר למחירי בתים', 'שיעורי תפוסה לפי סקטור', 'Cap Rate Analysis', 'מדד REIT סקטוריאלי']
+  },
+  analysis: {
+    'AI': 'מהפכת ה-AI נכנסת לשלב חדש שבו התוצאות העסקיות מתחילות להחליף את ההבטחות. חברות שמצליחות להראות ROI אמיתי צפויות ליהנות מעליית ערך, בעוד שחברות שנשארות ברמת השיווק עלולות לאכזב. המפתח הוא לזהות חברות שבאמת מייצרות ערך עם AI.',
+    'NVIDIA': 'נבידיה ממשיכה להיות הסיפור המרכזי של מהפכת ה-AI, אך השאלה עוברת מ"האם יש צמיחה" ל"כמה מהצמיחה כבר מתומחרת". אסטרטגיה של חשיפה מדורגת עשויה להתאים יותר מכניסה בבת אחת.',
+    'MARKET': 'השוק מציג דינמיקה מורכבת עם כוחות מנוגדים. הגישה המומלצת היא לשמור על חשיפה מנייתית עם דגש על איכות — חברות עם מאזן חזק, תזרים חיובי ויתרון תחרותי ברור.',
+    'CRYPTO': 'שוק הקריפטו ממשיך להתבגר עם כניסת גופים מוסדיים ורגולציה מתגבשת. עדיין קיימים סיכונים משמעותיים והתנודתיות נשארת גבוהה.',
+    'FED': 'מדיניות הפד נשארת הגורם הדומיננטי בתמחור נכסים. משקיעים חכמים מתכוננים למספר תרחישים במקום להמר על כיוון אחד.',
+    'TESLA': 'טסלה נשארת מקוטבת. הערך נגזר לא רק מרכב חשמלי אלא גם מ-AI, רובוטיקה ואנרגיה. מי שמשקיע צריך להיות מוכן לתנודתיות גבוהה.',
+    'CORRECTION': 'תיקון בשוק הוא תהליך טבעי. ההיסטוריה מלמדת שרוב התיקונים הם הזדמנויות קנייה, אך יש להבחין בין תיקון טכני לתחילת שוק דובי.',
+    'OPPORTUNITY': 'הזדמנויות אמיתיות מופיעות כשהשוק מגזים בתגובתו. ניתוח פונדמנטלי עמוק, סבלנות ומשמעת מבדילים בין הזדמנות אמיתית ל"סכין נופל".',
+    'RECESSION': 'ההיסטוריה מלמדת שמיתונות נמשכות 10-18 חודשים והשוק מתחיל להתאושש הרבה לפני הכלכלה הריאלית. מי שמוכן מראש יכול להפוך תקופה קשה להזדמנות.',
+    'GEOPOLITICS': 'אירועים גיאופוליטיים מייצרים לרוב שוק הזדמנויות. ההשפעה על השווקים היא לרוב קצרת טווח. פיזור גיאוגרפי וחשיפה לסחורות אסטרטגיות הם כלים מרכזיים.',
+    'ENERGY': 'סקטור האנרגיה עובר טרנספורמציה היסטורית. המעבר לאנרגיה נקייה לא יקרה בן לילה, מה שמשאיר מקום לרווחיות בחברות מסורתיות. חשיפה מאוזנת מומלצת.',
+    'COMMODITIES': 'שוק הסחורות הוא ברומטר לכיוון הכלכלה הגלובלית. חשיפה מגוונת יכולה לשפר את יחס הסיכוי-סיכון ולספק הגנה מפני אינפלציה.',
+    'BONDS': 'שוק האג"ח חזר להיות רלוונטי עם תשואות שמציעות תגמול הולם. סולם אג"ח הוא אסטרטגיה מוצלחת לסביבת ריבית לא ודאית.',
+    'DIVIDEND': 'אסטרטגיית דיבידנדים מציעה שילוב ייחודי של הכנסה שוטפת וצמיחת הון. המפתח הוא לחפש חברות עם יכולת בת-קיימא לשלם ולהגדיל דיבידנדים.',
+    'VOLATILITY': 'תנודתיות גבוהה היא כלי אם יודעים להשתמש בו. ניהול סיכונים הופך לקריטי — הקטנת פוזיציות, סטופים ונזילות הם חובה.',
+    'EARNINGS': 'עונת הדוחות היא המבחן האמיתי. חשוב להתמקד לא רק במספרים אלא גם בהנחיות הנהלה ובטון הכללי של שיחת הוועידה.',
+    'APPLE': 'אפל ממשיכה להיות עמוד תווך. צמיחת מגזר השירותים והמרווחים הגבוהים הופכים אותה לסיפור של הכנסות חוזרות. המכפיל הגבוה מחייב המשך ביצוע חזק.',
+    'REALESTATE': 'שוק הנדל"ן מציג פיצול — לוגיסטיקה ודאטה סנטרים פורחים, משרדים מתמודדים, מגורים חסינים יחסית. REITs מאפשרים גישה נזילה ומגוונת.'
+  }
+};
+
+// English templates
+var ENG = {
+  tldr: {
+    'AI': 'Major AI developments are reshaping the investment landscape with both challenges and opportunities. Selectivity is key.',
+    'NVIDIA': 'NVIDIA leads the AI chip revolution with unprecedented demand. The question is how much growth is already priced in.',
+    'MARKET': 'Markets stand at a pivotal point with multiple macro forces at play. Key trends demand close attention.',
+    'CRYPTO': 'Crypto markets show significant volatility amid regulatory and macro shifts. Institutional demand grows but risks remain.',
+    'FED': 'Fed policy directly impacts all capital markets. Upcoming decisions will set the direction for months ahead.',
+    'TESLA': 'Tesla remains polarizing — between innovation and operational challenges, it presents an interesting investor dilemma.',
+    'CORRECTION': 'Market correction raises directional questions. History shows corrections can be opportunities, but caution is needed.',
+    'OPPORTUNITY': 'Interesting investment opportunities emerge in current conditions. Smart filtering reveals attractive risk-reward positions.',
+    'EARNINGS': 'Earnings season reveals the real state behind headlines. Expectation gaps create significant opportunities.',
+    'RECESSION': 'Economic indicators raise slowdown concerns. Early preparation is the key to navigating such periods.',
+    'GEOPOLITICS': 'Geopolitical tensions add uncertainty layers. Investors must consider multiple scenarios in strategy building.',
+    'ENERGY': 'Energy markets at an inflection point with structural supply-demand shifts. Implications extend far beyond the sector.',
+    'COMMODITIES': 'Commodity trends reflect broad macro shifts. Understanding dynamics is essential for diversified portfolios.',
+    'BONDS': 'Bond markets signal important economic expectations. Current yields present a serious equity alternative.',
+    'DIVIDEND': 'Dividend strategies return to the spotlight. Proper selection can deliver stable income and growth.',
+    'VOLATILITY': 'Current volatility levels require strategy adjustments. Risk management becomes the decisive factor.',
+    'APPLE': 'Apple remains a portfolio cornerstone. Recent developments raise interesting directional questions.',
+    'REALESTATE': 'Real estate shows complex dynamics with rate and demand changes affecting both physical and traded markets.'
+  },
+  insights: {
+    'AI': ['The AI race is accelerating — laggards risk irrelevance', 'Investments shifting from hype to proven ROI execution', 'Tightening regulation favors companies with existing infrastructure'],
+    'NVIDIA': ['AI chip demand exceeds supply, supporting sustained growth', 'Competition intensifies but the technological moat remains', 'Custom model shift expands total addressable market'],
+    'MARKET': ['Conflicting factors create a complex momentum environment', 'Defensive sectors show relative strength signaling caution', 'Macro data points to asset allocation adjustments needed'],
+    'CRYPTO': ['Institutional adoption creates new price floors', 'Regulation evolving from resistance to framework', 'Traditional market correlation indicates growing maturity'],
+    'FED': ['Rate expectations affect pricing before decisions', 'Market-Fed expectation gap creates two-way risk', 'Extended restriction may create beaten-down asset opportunities'],
+    'TESLA': ['Innovation leadership faces growing competitive pressure', 'EV market shifting from volume growth to profitability', 'Business diversification expands growth potential'],
+    'CORRECTION': ['10-15% corrections are natural healthy market cycles', 'Negative sentiment often creates best long-term opportunities', 'Key is distinguishing technical corrections from trend changes'],
+    'OPPORTUNITY': ['Opportunities emerge from perception-reality gaps', 'Over-punished sectors offer the best fundamental value', 'Disciplined non-emotional approach identifies real opportunities'],
+    'EARNINGS': ['Estimate-actual gaps drive sharp price moves', 'Forward guidance matters as much as quarterly results', 'Margin trends are the best leading indicator'],
+    'RECESSION': ['Slowdown signs appear months before official recession', 'Different sectors react differently — winners exist in downturns', 'Portfolio liquidity and flexibility are key navigational tools'],
+    'GEOPOLITICS': ['Geopolitical risks tend to have temporary market impact', 'Supply chains reorganizing creates new winners and losers', 'Geographic diversification becomes increasingly important'],
+    'ENERGY': ['Clean transition still drives traditional energy demand', 'Energy prices feed into inflation and monetary policy', 'Companies with credible transition plans earn market premiums'],
+    'COMMODITIES': ['Commodity prices serve as leading global economy indicators', 'Supply imbalances create cyclical opportunities', 'Dollar remains the key pricing factor for commodities'],
+    'BONDS': ['Yield curve sends important growth expectation signals', 'Current yields make bonds an attractive equity alternative', 'Duration is a central risk component to manage carefully'],
+    'DIVIDEND': ['Consistent dividend growers tend to outperform', 'Dividend plus growth provides optimal long-term balance', 'Payout ratio sustainability matters more than yield height'],
+    'VOLATILITY': ['High volatility is a double-edged sword', 'Position sizing matters more than direction in volatile markets', 'Hedging instruments become essential tools'],
+    'APPLE': ['Ecosystem loyalty translates to recurring revenue', 'AI and services shift diversifies revenue sources', 'High valuation demands continued innovation'],
+    'REALESTATE': ['Rate changes affect real estate pricing with 6-12 month lag', 'Remote work permanently changed office demand', 'Residential remains resilient due to structural undersupply']
+  },
+  howToApply: {
+    'AI': ['Consider diversified AI ETF exposure over single stocks', 'Track major AI company CAPEX as leading indicator', 'Combine technical and fundamental for entry timing'],
+    'NVIDIA': ['Monitor data center orders as demand leading indicator', 'Consider supply chain exposure beyond the stock itself', 'Set clear take-profit levels given high volatility'],
+    'MARKET': ['Ensure proper sector and geographic diversification', 'Maintain liquidity for emerging opportunities', 'Review allocation based on changing macro conditions'],
+    'CRYPTO': ['Limit crypto to a small portfolio percentage', 'Use DCA strategy rather than market timing', 'Diversify across multiple cryptocurrencies'],
+    'FED': ['Avoid impulsive reactions to rate decisions', 'Consider rate impact across all portfolio components', 'Prepare for multiple scenarios with barbell strategy'],
+    'TESLA': ['Define position size in advance', 'Track quarterly delivery numbers as leading indicator', 'Consider options to limit risk while maintaining exposure'],
+    'CORRECTION': ['Prepare shopping lists with clear price targets', 'Enter gradually — never try to catch the bottom', 'Verify portfolio balance across sectors'],
+    'OPPORTUNITY': ['Conduct thorough due diligence before entry', 'Define stop-loss and profit targets upfront', 'Ensure fit with personal risk profile'],
+    'EARNINGS': ['Track analyst expectations pre-earnings', 'Consider reducing ahead of earnings for risk management', 'Focus on forward guidance over quarterly numbers'],
+    'RECESSION': ['Increase defensive sector and strong balance sheet exposure', 'Maintain larger than usual cash reserves', 'Review all positions and set stop levels'],
+    'GEOPOLITICS': ['Avoid drastic moves based solely on news', 'Diversify geographically to reduce exposure', 'Consider commodity exposure as geopolitical hedge'],
+    'ENERGY': ['Balance traditional and clean energy exposure', 'Track oil inventories and OPEC forecasts', 'Consider energy price impact on other holdings'],
+    'COMMODITIES': ['Use commodity ETFs as portfolio hedge component', 'Track commodity price ratios as macro indicators', 'Consider indirect exposure via producer stocks'],
+    'BONDS': ['Adjust average duration to rate expectations', 'Consider bond laddering for rate risk diversification', 'Monitor credit spreads as market risk indicator'],
+    'DIVIDEND': ['Build sectorially diversified dividend portfolio', 'Check dividend stability not just yield height', 'Reinvest dividends for compounding effect'],
+    'VOLATILITY': ['Reduce position sizes in volatile periods', 'Consider options strategies for risk management', 'Avoid decisions on extreme volatility days'],
+    'APPLE': ['Analyze services segment growth as key value driver', 'Track iPhone sales trends as leading indicator', 'Consider Apple as a core holding with calibrated weight'],
+    'REALESTATE': ['Diversify across real estate segments', 'Track occupancy rates and rent growth', 'Consider REITs as a liquid alternative to direct investment']
+  },
+  tools: {
+    'AI': ['NLP & machine learning models', 'Real-time sentiment analysis', 'AI value chain mapping', 'Technology adoption metrics'],
+    'NVIDIA': ['Semiconductor cycle analysis', 'TSMC order tracking', 'Sector P/E comparison', 'GPU market share analysis'],
+    'MARKET': ['Multi-timeframe technical analysis', 'VIX and derivatives', 'Put/Call ratio sentiment', 'Sector heat map'],
+    'CRYPTO': ['On-Chain analytics', 'Whale wallet tracking', 'Crypto Fear & Greed Index', 'Cross-coin performance'],
+    'FED': ['Yield curve analysis', 'CME FedWatch Tool', 'Breakeven inflation rates', 'Dot plot analysis'],
+    'TESLA': ['Quarterly delivery data', 'EV market share analysis', 'Operating margin comparison', 'Patent tracking'],
+    'CORRECTION': ['Key support/resistance levels', 'Moving averages (50/200)', 'RSI and momentum', 'Volume analysis'],
+    'OPPORTUNITY': ['Value stock screener', 'Quick DCF analysis', 'Historical P/E comparison', 'Sentiment mapping'],
+    'EARNINGS': ['EPS & Revenue estimates', 'Earnings Whisper Number', 'YoY quarter comparison', 'Guidance analysis'],
+    'RECESSION': ['Manufacturing & Services PMI', 'Weekly jobless claims', 'Leading Economic Index', 'HY vs IG credit spreads'],
+    'GEOPOLITICS': ['Geopolitical risk index', 'Strategic commodity prices', 'Supply chain tracking', 'Geographic exposure analysis'],
+    'ENERGY': ['Weekly EIA oil inventories', 'OPEC+ decision tracking', 'Crack spread analysis', 'Energy consumption trends'],
+    'COMMODITIES': ['Bloomberg Commodity Index', 'Gold-copper ratio', 'Commodity seasonality', 'Contango/Backwardation analysis'],
+    'BONDS': ['Government yield curve', 'Corporate credit spreads', 'Duration & Convexity', 'TIPS inflation expectations'],
+    'DIVIDEND': ['Payout ratio analysis', 'Consecutive raise history', 'Yield vs Growth', 'Free cash flow analysis'],
+    'VOLATILITY': ['VIX term structure', 'Implied vs Realized Vol', 'Historical standard deviation', 'Options skew analysis'],
+    'APPLE': ['Product segment sales', 'Services growth', 'iPhone ASP analysis', 'FAANG multiple comparison'],
+    'REALESTATE': ['Case-Shiller home prices', 'Occupancy by sector', 'Cap Rate Analysis', 'Sector REIT index']
+  },
+  analysis: {
+    'AI': 'The AI revolution enters a new results-driven phase. Companies showing real ROI will separate from the hype. Focus on margin impact, not just revenue headlines.',
+    'NVIDIA': 'NVIDIA remains central to AI but the question shifts to pricing. Demand is strong but watch for saturation and competition. Gradual exposure may be optimal.',
+    'MARKET': 'Complex dynamics with opposing forces. Maintain equity exposure with quality emphasis — strong balance sheets, positive cash flow, and clear competitive advantages.',
+    'CRYPTO': 'Crypto matures with institutional entry and evolving regulation. Significant risks persist and volatility demands careful risk management.',
+    'FED': 'Fed policy dominates asset pricing. Smart investors prepare for multiple scenarios rather than betting on a single outcome.',
+    'TESLA': 'Tesla remains highly polarized. Value derives from EVs, AI, robotics, and energy. Expect high volatility and define exit scenarios in advance.',
+    'CORRECTION': 'Corrections are natural and often buying opportunities. Distinguish technical corrections from bear market onsets. Act on pre-prepared plans, not panic.',
+    'OPPORTUNITY': 'Real opportunities emerge from market overreaction. Deep analysis, patience, and discipline separate opportunities from falling knives.',
+    'EARNINGS': 'Earnings season is the real market test. Focus on guidance, CFO tone, and conference call context — not just headline numbers.',
+    'RECESSION': 'Recessions average 10-18 months and markets recover well before the real economy. Preparation with balanced portfolios and cash reserves turns challenges into opportunities.',
+    'GEOPOLITICS': 'Geopolitical events create opportunity markets for disciplined investors. Impact is usually short-term. Geographic and commodity diversification are key risk tools.',
+    'ENERGY': 'Energy undergoes historic transformation. Clean transition coexists with traditional profitability. Balanced exposure to both sides is recommended.',
+    'COMMODITIES': 'Commodities serve as a reliable economic barometer. Diversified commodity exposure improves risk-reward and provides inflation protection.',
+    'BONDS': 'Bonds are relevant again with meaningful yields. Build diversified portfolios across duration, credit quality, and issuer type.',
+    'DIVIDEND': 'Dividend investing offers unique income-growth combination. Seek sustainable payers over highest yields.',
+    'VOLATILITY': 'Volatility is a tool if used correctly. Risk management is critical — reduce sizes, set stops, maintain liquidity.',
+    'APPLE': 'Apple remains a pillar. Services growth and high margins tell a recurring revenue story. High multiple demands continued strong execution.',
+    'REALESTATE': 'Real estate shows clear bifurcation — logistics and data centers thrive, offices struggle, residential stays resilient. REITs offer liquid diversified access.'
+  }
+};
+
+function generateArticle(title) {
+  var hebrew = isHebrew(title);
+  var topics = detectTopics(title);
+  var tickers = detectTickers(title);
+  var sentiment = detectSentiment(title);
+  var primary = topics[0];
+
+  var topicLabelsLocal = {
+    'AI': hebrew ? 'בינה מלאכותית' : 'AI', 'NVIDIA': 'NVIDIA', 'MARKET': hebrew ? 'שוק ההון' : 'Markets',
+    'CRYPTO': hebrew ? 'קריפטו' : 'Crypto', 'FED': hebrew ? 'הפד והריבית' : 'Fed & Rates',
+    'TESLA': hebrew ? 'טסלה' : 'Tesla', 'APPLE': hebrew ? 'אפל' : 'Apple',
+    'EARNINGS': hebrew ? 'דוחות כספיים' : 'Earnings', 'CORRECTION': hebrew ? 'תיקון שוק' : 'Correction',
+    'OPPORTUNITY': hebrew ? 'הזדמנויות' : 'Opportunities', 'RECESSION': hebrew ? 'מיתון' : 'Recession',
+    'GEOPOLITICS': hebrew ? 'גיאופוליטיקה' : 'Geopolitics', 'ENERGY': hebrew ? 'אנרגיה' : 'Energy',
+    'COMMODITIES': hebrew ? 'סחורות' : 'Commodities', 'BONDS': hebrew ? 'אג"ח' : 'Bonds',
+    'DIVIDEND': hebrew ? 'דיבידנדים' : 'Dividends', 'VOLATILITY': hebrew ? 'תנודתיות' : 'Volatility',
+    'REALESTATE': hebrew ? 'נדל"ן' : 'Real Estate'
+  };
+
+  // ─── Hash title for deterministic variation ───
+  var titleHash = 0;
+  for (var hi = 0; hi < title.length; hi++) { titleHash = ((titleHash << 5) - titleHash + title.charCodeAt(hi)) | 0; }
+  titleHash = Math.abs(titleHash);
+
+  var tickerNames = tickers.map(function(t) { return t.ticker + ' (' + t.name + ')'; });
+  var tickerShort = tickers.map(function(t) { return t.ticker; });
+  var topicStr = topics.slice(0, 2).map(function(t) { return topicLabelsLocal[t] || t; }).join(hebrew ? ' ו' : ' & ');
+
+  // ─── Build UNIQUE summary from title ───
+  var summary = '';
+  if (hebrew) {
+    summary = '״' + title + '״ — ';
+    if (tickers.length > 0) {
+      var sumStarts = [
+        'הסרטון מנתח את ' + tickerShort.join(', ') + ' ומספק זווית על ' + topicStr,
+        'ניתוח ממוקד של ' + tickerShort.join(', ') + '. הערוץ בוחן את ההשלכות על ' + topicStr,
+        'סקירה של ' + tickerShort.join(', ') + ' עם דגש על ' + topicStr + ' והשפעה על תיק ההשקעות'
+      ];
+      summary += sumStarts[titleHash % sumStarts.length];
+    } else {
+      var sumStartsGen = [
+        'הערוץ דן ב' + topicStr + ' ומה זה אומר למשקיעים',
+        'ניתוח של ' + topicStr + ' והשלכות מעשיות על ניהול תיק',
+        'סקירה של מגמות ב' + topicStr + ' עם התייחסות למה שצריך לעקוב'
+      ];
+      summary += sumStartsGen[titleHash % sumStartsGen.length];
+    }
+    summary += '. ';
+    if (sentiment === 'bullish') summary += 'הטון כאן חיובי — יש כאן הזדמנות פוטנציאלית.';
+    else if (sentiment === 'bearish') summary += 'הטון כאן זהיר — כדאי לבחון חשיפות קיימות.';
+    else summary += 'הטון מאוזן — חשוב לעקוב אחרי ההתפתחויות.';
+  } else {
+    summary = '"' + title + '" — ';
+    if (tickers.length > 0) {
+      var eSumStarts = [
+        'Analyzes ' + tickerShort.join(', ') + ' with a focus on ' + topicStr + ' implications',
+        'Deep dive into ' + tickerShort.join(', ') + ' in the context of ' + topicStr,
+        'Covers ' + tickerShort.join(', ') + ' and what ' + topicStr + ' trends mean for positioning'
+      ];
+      summary += eSumStarts[titleHash % eSumStarts.length];
+    } else {
+      var eSumGen = [
+        'Examines ' + topicStr + ' and portfolio implications',
+        'Analysis of ' + topicStr + ' trends with actionable takeaways',
+        'Reviews ' + topicStr + ' developments and what to watch'
+      ];
+      summary += eSumGen[titleHash % eSumGen.length];
+    }
+    summary += '. ';
+    if (sentiment === 'bullish') summary += 'Tone is constructive — potential opportunity here.';
+    else if (sentiment === 'bearish') summary += 'Cautious tone — review existing exposure.';
+    else summary += 'Balanced perspective — monitor developments.';
+  }
+
+  // ─── Build KEY POINTS: title-specific + topic-driven, unique per video ───
+  var keyPoints = [];
+  if (hebrew) {
+    // Always lead with what the title specifically suggests
+    if (tickers.length > 0) {
+      keyPoints.push('מוזכרות: ' + tickerNames.join(', ') + ' — ' + (sentiment === 'bullish' ? 'בטון חיובי, רמז להזדמנות קנייה' : sentiment === 'bearish' ? 'בטון שלילי, אזהרה מחשיפה' : 'ללא המלצה חד-משמעית, דורש ניתוח נוסף'));
+    }
+    // Topic-specific hedge fund insights (3 variants each, picked by hash)
+    var hfInsights = {
+      'AI': [['ההשקעות ב-AI עוברות מהייפ ל-ROI — חברות שלא מראות תוצאות ייענשו','הכניסה לפוזיציות AI צריכה להיות סלקטיבית, לא דרך סל רחב'],['המירוץ ל-AGI מאיץ את ההוצאות — עקבו אחרי CAPEX של Big Tech כסיגנל','חברות AI עם הכנסות חוזרות (SaaS) עדיפות על חד-פעמיות'],['שרשרת הערך של AI מתרחבת מעבר לשבבים — תוכנה ותשתיות הן הסיפור הבא','חפשו חברות עם moat טכנולוגי, לא רק צמיחה']],
+      'NVIDIA': [['נבידיה בתמחור שמגלם צמיחה אגרסיבית — כל החמצה תייצר ירידה חדה','עקבו אחרי הזמנות Blackwell כאינדיקטור מוביל'],['שוק השבבים מחזורי — גם חברות מצוינות חוות ירידות של 30%+','שקלו חשיפה דרך שרשרת האספקה (TSMC, ASML) כחלופה בסיכון נמוך יותר'],['הביקוש ל-GPU חזק אך המתחרים מתקרבים (AMD, custom chips)','המכפיל Forward PE הוא המדד — לא ההיסטורי']],
+      'MARKET': [['השוק מתומחר ל-perfection — כל הפתעה שלילית תייצר תנודה חדה','שמרו על 15-20% מזומן להזדמנויות'],['רוטציה סקטוריאלית מתרחשת — עקבו אחרי מה שעולה ומה שיורד','חשוב לבדוק breadth — האם העלייה רחבה או ממוקדת'],['המאקרו מכתיב כיוון — ריבית, תעסוקה ואינפלציה הם המשתנים','אל תילחמו במגמה, אבל הכינו תוכנית ליום שהיא מסתיימת']],
+      'CRYPTO': [['ביטקוין כ-store of value מתחזק עם אימוץ מוסדי','הגבילו חשיפה ל-2-5% מהתיק — ההתנהגות עדיין ספקולטיבית'],['רגולציה היא הקטליזטור הבא — חיובי לטווח ארוך','ETF קריפטו מקל על כניסה אבל לא מבטל סיכון'],['המתאם עם נאסד"ק עדיין גבוה — זה לא גידור אמיתי','עקבו אחרי halving cycle ו-on-chain metrics']],
+      'FED': [['שוק הריבית מתמחר את העתיד — לא את ההווה','כל הפתעה ב-dot plot תזיז את כל סוגי הנכסים'],['ריבית גבוהה לאורך זמן מעדיפה חברות עם מזומן ורווח','סקטור הבנקים נהנה, הנדל"ן ומניות צמיחה סובלים'],['הפד מסתכל על Core PCE — זה המדד לעקוב','שינוי בציפיות ריבית הוא trigger לסקירת תיק']],
+      'TESLA': [['טסלה היא לא רק רכב — AI, רובוטיקה, אנרגיה','המניה נסחרת על ציפיות עתידיות — כל עדכון שלילי מכאיב'],['מסירות רבעוניות הן המדד שהשוק מסתכל עליו','המכפיל הגבוה דורש צמיחה עקבית — אין מקום לאכזבות'],['תחרות ב-EV גוברת — BYD בסין, Legacy automakers באירופה','FSD ורובוטקסי הם ה-optionality שמצדיקים את הפרמיה']],
+      'CORRECTION': [['תיקון של 10% הוא נורמלי — קורה בממוצע אחת לשנה','הכינו רשימת קנייה עם מחירי יעד מראש'],['המפתח: האם Earnings עדיין צומחים? אם כן — זו הזדמנות','אל תנסו לתפוס תחתית — כנסו בשלבים (DCA)'],['VIX מעל 25 = פחד בשוק = הזדמנות למשקיעים סבלניים','בדקו שאין לכם ריכוזיות יתר בסקטור שנפגע']],
+      'OPPORTUNITY': [['חפשו פער בין מחיר לערך — שם נמצאות ההזדמנויות','בצעו due diligence: מאזן, תזרים, יתרון תחרותי'],['הזדמנויות אמיתיות מופיעות כשהסנטימנט הכי שלילי','הגדירו thesis ברור ו-exit strategy לפני כניסה'],['לא כל ירידה היא הזדמנות — חפשו catalyst להתאוששות','גודל פוזיציה צריך לשקף את רמת הוודאות שלכם']],
+      'EARNINGS': [['עונת דוחות = תנודתיות — הקטינו פוזיציות לפני דוח','ההנחיות קדימה (guidance) חשובות יותר מהמספר הרבעוני'],['מגמות מרווחי רווח הן האינדיקטור המוביל הטוב ביותר','הפתעות חיוביות בהכנסות > הפתעות חיוביות ב-EPS'],['שימו לב לטון ההנהלה בשיחת הוועידה — לפעמים הטון חשוב מהמספרים','Earnings revisions הם סיגנל חזק — עקבו אחרי שינויי תחזיות אנליסטים']],
+      'RECESSION': [['סימני מיתון מופיעים 6-12 חודש לפני ההכרזה הרשמית','הגדילו חשיפה דפנסיבית: utilities, healthcare, consumer staples'],['השוק מתחיל להתאושש הרבה לפני שהמיתון נגמר','שמרו על נזילות — ההזדמנויות הכי טובות מגיעות בשיא הפחד'],['מיתון לא אומר שהכל יורד — יש מנצחים גם בירידות','עקבו אחרי PMI, תביעות אבטלה, ועקום תשואות']],
+      'GEOPOLITICS': [['אירועים גיאופוליטיים יוצרים שוק panic — לרוב זמני','הגדילו חשיפה לסחורות ודפנסיביים כגידור'],['מלחמות סחר משפיעות על שרשראות אספקה — מפסידים ומנצחים','אל תעשו מהלכים חדים על בסיס כותרות — חכו 48-72 שעות'],['פיזור גיאוגרפי הוא הגידור הטוב ביותר','עקבו אחרי מחירי נפט וזהב כברומטר לסיכון']],
+      'ENERGY': [['אנרגיה היא סקטור מחזורי — קנו בזול, מכרו ביוקר','OPEC+ שולט בהיצע — כל החלטה שלהם מזיזה את השוק'],['המעבר לאנרגיה נקייה ייקח עשרות שנים — אנרגיה מסורתית רלוונטית','חשיפה מאוזנת: XOM/CVX + אנרגיה ירוקה'],['מחירי אנרגיה משפיעים על אינפלציה ובעקיפין על ריבית','מלאי הנפט השבועי הוא מדד מפתח לעקוב']],
+      'COMMODITIES': [['זהב הוא hedge — לא השקעה. 5-10% מהתיק','יחס נחושת-זהב מספר סיפור על הכלכלה הגלובלית'],['סחורות עולות כשהדולר נחלש — עקבו אחרי DXY','עונתיות בסחורות חקלאיות — לא הכל macro'],['סין היא הקונה הגדולה — כלכלת סין = מחירי סחורות','ETF סחורות כרכיב גידור — לא כהשקעת ליבה']],
+      'BONDS': [['תשואות של 4-5% באג"ח ממשלתי = חלופה רצינית למניות','משך חיים (Duration) = סיכון ריבית — התאימו לציפיות'],['אג"ח קונצרני IG נותן פרמיה סבירה בסיכון נמוך','עקום תשואות הפוך = סיגנל מיתון — אבל לא תמיד נכון'],['סולם אג"ח (bond ladder) = ניהול סיכון חכם','מרווחי אשראי HY — ברומטר לסיכון שוק']],
+      'DIVIDEND': [['דיבידנד = אינדיקטור לאיכות — חברות שמחלקות בטוחות בעצמן','עקבו אחרי Dividend Aristocrats — 25+ שנות העלאה רצופה'],['תשואת דיבידנד גבוהה מדי = סיכון — בדקו payout ratio','שילוב דיבידנד + צמיחה (SCHD, VIG) = אופטימלי לטווח ארוך'],['השקיעו מחדש דיבידנדים = ריבית דריבית מואצת','חברות utility ו-REIT = דיבידנד יציב אבל צמיחה מוגבלת']],
+      'VOLATILITY': [['VIX מעל 30 = פחד קיצוני — היסטורית, הזדמנות קנייה','הקטינו גודל פוזיציות ב-50% בתנודתיות גבוהה'],['אל תקבלו החלטות ביום של ירידה של 3%+ — חכו','אסטרטגיית put protection על אחזקות ליבה'],['תנודתיות = premium — מוכרי אופציות מרוויחים','בדקו VIX term structure — contango = נורמלי, backwardation = מפחיד']],
+      'REALESTATE': [['ריבית גבוהה = לחץ על נדל"ן — בפיגור של 6-12 חודש','REITs בדיסקאונט ל-NAV = הזדמנות פוטנציאלית'],['דאטה סנטרים ולוגיסטיקה = סגמנטים חזקים','משרדים עדיין בבעיה — עבודה היברידית זה לא זמני'],['שיעורי תפוסה ו-cap rate הם המדדים — לא רק מחיר','מגורים חסינים יחסית בגלל מחסור מבני בהיצע']]
+    };
+    var topicIns = hfInsights[primary] || hfInsights['MARKET'];
+    var variant = titleHash % topicIns.length;
+    topicIns[variant].forEach(function(p) { keyPoints.push(p); });
+    // Add second topic insight if exists
+    if (topics.length > 1 && hfInsights[topics[1]]) {
+      var t2Ins = hfInsights[topics[1]];
+      keyPoints.push(t2Ins[(titleHash + 1) % t2Ins.length][0]);
+    }
+  } else {
+    // English key points
+    if (tickers.length > 0) {
+      keyPoints.push('Mentions: ' + tickerNames.join(', ') + ' — ' + (sentiment === 'bullish' ? 'constructive tone, potential buy signal' : sentiment === 'bearish' ? 'cautious tone, warning on exposure' : 'no clear directional call, needs further analysis'));
+    }
+    var eInsights = {
+      'AI': [['AI capex cycle accelerating — follow Big Tech spending as leading indicator','Be selective: companies showing real AI ROI will separate from hype'],['The AI stack is broadening beyond chips to software and infrastructure','Look for recurring revenue AI businesses, not one-time consulting']],
+      'NVIDIA': [['NVDA priced for aggressive growth — any miss triggers sharp selloff','Watch Blackwell orders and data center capex as forward indicators'],['Semicycles are real — even great companies see 30%+ drawdowns','Consider supply chain exposure (TSMC, ASML) as lower-risk alternative']],
+      'MARKET': [['Market priced for perfection — any negative surprise triggers volatility','Maintain 15-20% cash for opportunities'],['Sector rotation happening — track what is leading and lagging','Check market breadth — is the rally broad or concentrated?']],
+      'CRYPTO': [['Bitcoin as store of value strengthening with institutional adoption','Limit allocation to 2-5% — behavior remains speculative'],['Regulation is the next catalyst — long-term positive','Crypto ETFs simplify entry but do not eliminate risk']],
+      'FED': [['Rate market prices the future, not the present','Any dot plot surprise moves all asset classes'],['Higher for longer favors cash-rich profitable companies','Banks benefit, REITs and growth stocks suffer']],
+      'TESLA': [['Tesla is not just autos — AI, robotics, energy optionality','Stock trades on future expectations — any disappointment hurts'],['Quarterly deliveries are the metric the market watches','High multiple demands consistent execution — no room for misses']],
+      'CORRECTION': [['10% corrections are normal — happen roughly once per year','Prepare buy lists with target prices in advance'],['Key question: are earnings still growing? If yes, it is an opportunity','Do not try to catch the bottom — scale in via DCA']],
+      'EARNINGS': [['Earnings season = volatility — consider reducing pre-report','Forward guidance matters more than the quarterly number'],['Margin trends are the best leading indicator for stock direction','Watch management tone in earnings calls — sometimes tone matters more than numbers']],
+      'OPPORTUNITY': [['Look for price-value gaps — that is where opportunities live','Do due diligence: balance sheet, cash flow, competitive moat'],['Real opportunities appear when sentiment is most negative','Define clear thesis and exit strategy before entering']],
+      'RECESSION': [['Recession signals appear 6-12 months before official declaration','Increase defensive exposure: utilities, healthcare, staples'],['Markets recover well before the recession officially ends','Maintain liquidity — best opportunities come at peak fear']],
+      'GEOPOLITICS': [['Geopolitical events create panic selling — usually temporary','Increase commodity and defensive exposure as hedge'],['Trade wars disrupt supply chains — creates winners and losers','Avoid sharp moves on headlines — wait 48-72 hours']],
+      'ENERGY': [['Energy is cyclical — buy cheap, sell expensive','OPEC+ controls supply — every decision moves markets'],['Clean transition takes decades — traditional energy stays relevant','Balanced exposure: majors + green energy']],
+      'COMMODITIES': [['Gold is a hedge, not an investment — 5-10% of portfolio','Copper-gold ratio tells the global economy story'],['Commodities rise when dollar weakens — track DXY','China is the marginal buyer — Chinese economy = commodity prices']],
+      'BONDS': [['4-5% government yields = serious equity alternative','Duration = rate risk — match to your outlook'],['IG corporate bonds offer reasonable premium at low risk','Inverted yield curve = recession signal — but not always right']],
+      'DIVIDEND': [['Dividends signal quality — companies that pay are confident','Follow Dividend Aristocrats — 25+ years of consecutive raises'],['Excessive yield = risk — check payout ratio','Combine dividend + growth (SCHD, VIG) for optimal long-term']],
+      'VOLATILITY': [['VIX above 30 = extreme fear — historically a buying opportunity','Reduce position sizes by 50% in high volatility'],['Do not make decisions on 3%+ down days — wait','Put protection on core holdings as insurance']],
+      'REALESTATE': [['High rates = RE pressure — with 6-12 month lag','REITs at NAV discount = potential opportunity'],['Data centers and logistics = strong segments','Offices still challenged — hybrid work is permanent']]
+    };
+    var eTopicIns = eInsights[primary] || eInsights['MARKET'];
+    var eVar = titleHash % eTopicIns.length;
+    eTopicIns[eVar].forEach(function(p) { keyPoints.push(p); });
+    if (topics.length > 1 && eInsights[topics[1]]) {
+      var et2 = eInsights[topics[1]];
+      keyPoints.push(et2[(titleHash + 1) % et2.length][0]);
+    }
+  }
+
+  // ─── PORTFOLIO ACTIONS: specific, ticker-aware ───
+  var actions = [];
+  if (hebrew) {
+    if (tickers.length > 0) {
+      tickers.forEach(function(tk) {
+        if (sentiment === 'bullish') actions.push('שקלו להגדיל חשיפה ל-' + tk.ticker + ' (' + tk.name + ') — הסנטימנט חיובי');
+        else if (sentiment === 'bearish') actions.push('בחנו צמצום חשיפה ל-' + tk.ticker + ' (' + tk.name + ') — אזהרות מהערוץ');
+        else actions.push('עקבו אחרי ' + tk.ticker + ' (' + tk.name + ') — שימו בוואצ\'ליסט ובחנו נקודת כניסה');
+      });
+    }
+    var topicActions = {
+      'AI': ['בחנו חשיפה ל-AI בתיק — הסקטור מוביל צמיחה','הקצו 10-15% מהתיק לנושא AI דרך מניות ו-ETFs'],
+      'NVIDIA': ['עקבו אחרי דוח נבידיה הקרוב — trigger לפוזיציה','שקלו NVDA כאחזקת ליבה בחשיפת טכנולוגיה'],
+      'MARKET': ['וודאו פיזור נכון — אל תהיו ממוקדים בסקטור אחד','שמרו על 15-20% מזומן לניצול הזדמנויות'],
+      'CRYPTO': ['הגבילו חשיפת קריפטו ל-2-5% מהתיק','BTC דרך ETF כחשיפה מוסדית בטוחה יותר'],
+      'FED': ['התכוננו למספר תרחישי ריבית — לא להמר על כיוון אחד','סקרו חשיפה לנכסים רגישי ריבית (נדל"ן, growth)'],
+      'TESLA': ['הגדירו stop-loss ברור — המניה תנודתית','גודל פוזיציה: לא יותר מ-3-5% מהתיק'],
+      'CORRECTION': ['הכינו רשימת קנייה עם מחירי יעד','הגדילו מזומן ב-10% נוספים לניצול תיקון'],
+      'OPPORTUNITY': ['בצעו due diligence לפני כניסה','הגדירו thesis, target ו-stop לכל פוזיציה חדשה'],
+      'EARNINGS': ['הקטינו פוזיציות לפני דוחות של אחזקות מרכזיות','הכינו תוכנית: מה עושים ב-beat ומה ב-miss'],
+      'RECESSION': ['הגדילו דפנסיביים: utilities, healthcare, staples','שמרו על נזילות גבוהה — cash is king לפני מיתון'],
+      'GEOPOLITICS': ['שקלו חשיפה לזהב ולסחורות כגידור','פזרו גיאוגרפית — אל תהיו 100% US'],
+      'ENERGY': ['חשיפה מאוזנת: אנרגיה מסורתית + ירוקה','עקבו אחרי מלאי נפט ו-OPEC כטריגרים'],
+      'COMMODITIES': ['שקלו GLD/IAU כגידור אינפלציוני 5-10%','סחורות כרכיב גידור — לא כהשקעה מרכזית'],
+      'BONDS': ['שקלו הקצאה לאג"ח — תשואות אטרקטיביות','בנו bond ladder לפיזור סיכון ריבית'],
+      'DIVIDEND': ['בנו תיק דיבידנדים מגוון — לא רק yield גבוה','SCHD/VIG כבסיס + בחירות נקודתיות'],
+      'VOLATILITY': ['הקטינו גודל פוזיציות עד שהתנודתיות תרד','שקלו protective puts על אחזקות ליבה'],
+      'REALESTATE': ['בחנו REITs בדיסקאונט — VNQ, O, AMT','עקבו אחרי שינויי ריבית כטריגר לנדל"ן']
+    };
+    var ta = topicActions[primary] || topicActions['MARKET'];
+    ta.forEach(function(a) { if (actions.indexOf(a) === -1) actions.push(a); });
+  } else {
+    if (tickers.length > 0) {
+      tickers.forEach(function(tk) {
+        if (sentiment === 'bullish') actions.push('Consider increasing ' + tk.ticker + ' (' + tk.name + ') exposure — bullish signal');
+        else if (sentiment === 'bearish') actions.push('Review ' + tk.ticker + ' (' + tk.name + ') exposure — cautionary signal from channel');
+        else actions.push('Add ' + tk.ticker + ' (' + tk.name + ') to watchlist — evaluate entry point');
+      });
+    }
+    var eActions = {
+      'AI': ['Review AI allocation — sector leading growth','Target 10-15% portfolio AI exposure via stocks and ETFs'],
+      'MARKET': ['Ensure proper diversification across sectors','Maintain 15-20% cash for opportunities'],
+      'CRYPTO': ['Cap crypto at 2-5% of portfolio','BTC via ETF as safer institutional exposure'],
+      'FED': ['Prepare for multiple rate scenarios','Review rate-sensitive holdings (REITs, growth)'],
+      'CORRECTION': ['Prepare buy list with target prices','Increase cash by 10% to capitalize on correction'],
+      'EARNINGS': ['Reduce positions ahead of major earnings','Plan for both beat and miss scenarios']
+    };
+    var ea = eActions[primary] || eActions['MARKET'];
+    ea.forEach(function(a) { if (actions.indexOf(a) === -1) actions.push(a); });
+  }
+
+  // ─── ANALYSIS: hedge fund perspective, unique per title ───
+  var db = hebrew ? HEB : ENG;
+  var analysisText = '';
+  if (hebrew) {
+    var hfAnalyses = {
+      'AI': ['מנקודת מבט של קרן גידור: סקטור ה-AI נמצא בשלב שבו הפרדה בין מנצחים למפסידים מתחילה. החברות עם moat טכנולוגי ו-recurring revenue ינצחו. השאלה היא לא "האם AI" אלא "איזה AI". המלצה: חשיפה ממוקדת דרך picks, לא סל רחב.','זווית ה-hedge fund: ה-AI trade התפצל. Tier 1 (NVDA, MSFT) כבר מתומחר. ה-alpha נמצא ב-Tier 2 — חברות תוכנה ותשתית שמרוויחות מאימוץ AI. חפשו שם.'],
+      'NVIDIA': ['כמנהל השקעות — נבידיה היא ה-core position בכל תיק טכנולוגיה, אבל בגודל שמאפשר לישון בלילה. התנודתיות גבוהה, המכפילים נמתחו, אבל הביקוש אמיתי. אסטרטגיה: hold core, trade around the position.','מבט של HF: NVDA היא proxy ל-AI. הסיכון: customer concentration ותחרות מ-custom chips. ה-upside: TAM גדל. תנהלו את הפוזיציה — לא תנו לה לנהל אתכם.'],
+      'MARKET': ['מנקודת מבט של HF manager: השוק נראה overextended על פני השטח, אבל ה-breadth מתרחב. הכסף החכם מסתובב — עוזב winners ומחפש laggards. זה שוק של stock picking, לא של beta. תהיו סלקטיביים.','כמנהל קרן: ה-risk/reward לא מצדיק aggressiveness. שמרו על תיק מאוזן, cash allocation גבוהה מהרגיל, ומוכנות לנצל תיקון. הזמן הוא חבר של המוכנים.'],
+      'CRYPTO': ['מנקודת מבט מוסדית: קריפטו נכנס לתקופת legitimization. BTC ETF שינה את המשחק. עדיין — זה 2-5% מהתיק, position size קטן, ו-rebalance קבוע. אל תתאהבו בפוזיציה.','HF perspective: הקריפטו הוא asymmetric bet — ה-downside מוגבל (אם ה-size נכון), ה-upside משמעותי. אבל ה-timing בלתי אפשרי. DCA ומשמעת.'],
+      'FED': ['כמנהל השקעות: הפד הוא המנצח של השוק. כל מילה של פאוול מזיזה טריליונים. ההכנה הנכונה: תרחישים עם הסתברויות, לא הימור על כיוון אחד. barbell strategy — קצר ב-duration + חשיפה לנכסי סיכון.','HF take: השוק ממהר לתמחר rate cuts שאולי לא יגיעו. הסיכון הוא higher for longer. תתכוננו: חברות עם cash flow חיובי, חוב נמוך, ויכולת שרידות.'],
+      'TESLA': ['מנהל HF: טסלה היא מניית conviction — או שאתה מאמין או שלא. כ-trade, היא מצוינת בזכות התנודתיות. כהשקעה, צריך thesis ברור על FSD ורובוטיקה. גודל פוזיציה: קטן מספיק שירידה של 40% לא תכאיב.','Tesla from a PM perspective: הסיכון הוא דה-ראטינג של המכפיל. ה-optionality (FSD, Optimus, energy) מצדיקה premium — אבל כמה? הגדירו price target ו-stop. משמעת.']
+    };
+    var hfA = hfAnalyses[primary] || hfAnalyses['MARKET'];
+    analysisText = hfA[titleHash % hfA.length];
+  } else {
+    var eAnalyses = {
+      'AI': ['Hedge fund perspective: The AI sector is entering the separation phase — winners vs. losers becoming clear. Companies with technological moats and recurring revenue will outperform. The question is not "whether AI" but "which AI". Focus on concentrated picks over broad baskets.','HF take: The AI trade has bifurcated. Tier 1 (NVDA, MSFT) is well-priced. Alpha is in Tier 2 — software and infrastructure companies benefiting from AI adoption. Look there.'],
+      'NVIDIA': ['As a portfolio manager: NVDA is the core tech position, but size it for volatility. Demand is real, multiples are stretched. Strategy: hold core position, trade around it tactically.','HF perspective: NVDA is the AI proxy. Risk: customer concentration and custom chip competition. Upside: TAM expansion. Manage the position — don\'t let it manage you.'],
+      'MARKET': ['HF manager view: Market looks overextended on the surface, but breadth is improving. Smart money is rotating — leaving winners, seeking laggards. This is a stock-picking market, not a beta market.','As a fund manager: Risk/reward doesn\'t justify aggressiveness. Maintain balanced portfolio, higher-than-normal cash allocation, and readiness to capitalize on corrections. Time favors the prepared.'],
+      'FED': ['As a portfolio manager: The Fed is the market\'s conductor. Every Powell word moves trillions. Correct preparation: scenarios with probabilities, not directional bets. Barbell strategy — short duration + risk asset exposure.','HF take: Market is rushing to price rate cuts that may not come. The risk is higher for longer. Prepare: positive cash flow companies, low debt, survivability.'],
+      'CRYPTO': ['Institutional perspective: Crypto entering legitimization phase. BTC ETF changed the game. Still — 2-5% of portfolio, small position size, regular rebalance.','HF view: Crypto is an asymmetric bet — limited downside (with right sizing), significant upside. But timing is impossible. DCA and discipline.']
+    };
+    var eA = eAnalyses[primary] || eAnalyses['MARKET'];
+    analysisText = eA[titleHash % eA.length];
+  }
+
+  // Add title-specific context to analysis
+  if (tickers.length > 0) {
+    if (hebrew) {
+      analysisText += ' לגבי ' + tickerShort.join(' ו-') + ': ';
+      if (sentiment === 'bullish') analysisText += 'הסנטימנט החיובי מהערוץ תומך בפוזיציה, אבל וודאו שזה מתיישב עם הניתוח שלכם.';
+      else if (sentiment === 'bearish') analysisText += 'הערוץ מזהיר — שווה לבחון את ה-thesis שלכם מחדש ולהגדיר stop-loss.';
+      else analysisText += 'אין המלצה חד-משמעית — שימו בוואצ\'ליסט ועקבו אחרי catalyst הבא.';
+    } else {
+      analysisText += ' On ' + tickerShort.join(' and ') + ': ';
+      if (sentiment === 'bullish') analysisText += 'Constructive signal from channel supports the position, but verify against your own analysis.';
+      else if (sentiment === 'bearish') analysisText += 'Channel is cautious — reassess your thesis and set stop-loss levels.';
+      else analysisText += 'No clear call — add to watchlist and monitor for next catalyst.';
+    }
+  }
+
+  // Sentiment tag
+  var sentimentTag = hebrew
+    ? (sentiment === 'bullish' ? '🟢 סנטימנט: חיובי' : sentiment === 'bearish' ? '🔴 סנטימנט: שלילי' : '⚪ סנטימנט: ניטרלי')
+    : (sentiment === 'bullish' ? '🟢 Sentiment: Bullish' : sentiment === 'bearish' ? '🔴 Sentiment: Bearish' : '⚪ Sentiment: Neutral');
+
+  return {
+    summary: summary,
+    sentiment: sentimentTag,
+    tickers: tickers,
+    topics: topics.map(function(t) { return topicLabelsLocal[t] || t; }),
+    keyPoints: keyPoints.slice(0, 5),
+    portfolioActions: actions.slice(0, 4),
+    analysis: analysisText
+  };
+}
+
+// ——— Render cards ———
+function renderCards(videos, articles, showChannel) {
+  var grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  grid.style.display = '';
+  document.getElementById('conclusionsPanel').classList.remove('visible');
+
+  articles.forEach(function(article, idx) {
+    var card = document.createElement('div');
+    card.className = 'card';
+    card.id = 'card-' + idx;
+    var video = videos[idx];
+    var num = String(idx + 1).padStart(2, '0');
+    var dateStr = video.date || '';
+    var viewsStr = video.views ? ' · ' + escapeHtml(video.views) : '';
+    var channelLine = showChannel && video.channelName ? '<div class="card-channel">' + escapeHtml(video.channelName) + '</div>' : '';
+
+    // Ticker badges
+    var tickerBadges = '';
+    if (article.tickers && article.tickers.length > 0) {
+      tickerBadges = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">';
+      article.tickers.forEach(function(tk) {
+        tickerBadges += '<span style="background:rgba(212,175,55,0.15);border:1px solid var(--gold-dim);border-radius:4px;padding:2px 8px;font-size:0.7rem;color:var(--gold-light);">' + escapeHtml(tk.ticker) + '</span>';
+      });
+      tickerBadges += '</div>';
+    }
+
+    // Topic tags
+    var topicTags = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">';
+    article.topics.forEach(function(t) {
+      topicTags += '<span style="background:rgba(255,255,255,0.05);border-radius:4px;padding:2px 8px;font-size:0.65rem;color:var(--text-dim);">' + escapeHtml(t) + '</span>';
+    });
+    topicTags += '<span style="font-size:0.7rem;">' + escapeHtml(article.sentiment) + '</span>';
+    topicTags += '</div>';
+
+    card.innerHTML =
+      '<div class="card-number">' + num + '</div>' +
+      '<div class="card-date">' + escapeHtml(dateStr) + viewsStr + '</div>' +
+      channelLine +
+      '<div class="card-title"><a href="' + escapeHtml(video.url) + '" target="_blank" rel="noopener">' + escapeHtml(video.title) + '</a></div>' +
+      topicTags +
+      tickerBadges +
+      '<div class="section"><div class="section-label">סיכום</div><div class="section-content">' + escapeHtml(article.summary) + '</div></div>' +
+      '<div class="section"><div class="section-label">נקודות מפתח</div><div class="section-content"><ul>' + article.keyPoints.map(function(s){ return '<li>' + escapeHtml(s) + '</li>'; }).join('') + '</ul></div></div>' +
+      '<div class="section"><div class="section-label">מה לעשות בפורטפוליו</div><div class="section-content"><ul>' + article.portfolioActions.map(function(s){ return '<li>' + escapeHtml(s) + '</li>'; }).join('') + '</ul></div></div>' +
+      '<div class="section"><div class="section-label">ניתוח מעמיק</div><div class="section-content">' + escapeHtml(article.analysis) + '</div></div>';
+
+    grid.appendChild(card);
+  });
+
+  articles.forEach(function(_, idx) {
+    setTimeout(function() { var c = document.getElementById('card-' + idx); if (c) c.classList.add('visible'); }, 150 + idx * 250);
+  });
+}
+
+// ——— Conclusions — Investment Memo ———
+function renderConclusions() {
+  var panel = document.getElementById('conclusionsPanel');
+  panel.innerHTML = '';
+  document.getElementById('grid').style.display = 'none';
+  document.getElementById('channelInfo').classList.remove('visible');
+
+  var keys = Object.keys(channelData);
+  var failedKeys = Object.keys(failedTabs);
+
+  if (keys.length === 0 && failedKeys.length === 0) {
+    panel.innerHTML = '<div class="no-data-msg">עדיין לא נטענו ערוצים. לחצו על "טען את כל הערוצים" ואז חזרו למסקנות.</div>';
+    panel.classList.add('visible');
+    return;
+  }
+
+  // ——— Collect all data ———
+  var topicCounts = {};
+  var tickerMap = {};
+  var sentimentMap = { bullish: 0, bearish: 0, neutral: 0 };
+  var channelAnalysis = [];
+  var allPortfolioActions = [];
+  var allKeyPoints = [];
+
+  var topicLabels = {
+    'AI': 'בינה מלאכותית (AI)', 'NVIDIA': 'NVIDIA / שבבים', 'MARKET': 'שוק ומגמות',
+    'CRYPTO': 'קריפטו', 'FED': 'ריבית / אינפלציה', 'TESLA': 'טסלה', 'APPLE': 'אפל',
+    'EARNINGS': 'דוחות כספיים', 'CORRECTION': 'תיקון / ירידות', 'OPPORTUNITY': 'הזדמנויות',
+    'RECESSION': 'מיתון / האטה', 'GEOPOLITICS': 'גיאופוליטיקה', 'ENERGY': 'אנרגיה / נפט',
+    'COMMODITIES': 'סחורות / זהב', 'REALESTATE': 'נדל"ן', 'BONDS': 'אג"ח / תשואות',
+    'DIVIDEND': 'דיבידנדים', 'VOLATILITY': 'תנודתיות / סיכון'
+  };
+
+  keys.forEach(function(key) {
+    var d = channelData[key];
+    var chTopics = {};
+    var chTickers = [];
+    var chSentiments = { bullish: 0, bearish: 0, neutral: 0 };
+
+    d.videos.forEach(function(v, i) {
+      var topics = detectTopics(v.title);
+      var tickers = detectTickers(v.title);
+      var sentiment = detectSentiment(v.title);
+
+      topics.forEach(function(t) {
+        topicCounts[t] = (topicCounts[t] || 0) + 1;
+        chTopics[t] = (chTopics[t] || 0) + 1;
+      });
+      sentimentMap[sentiment]++;
+      chSentiments[sentiment]++;
+
+      tickers.forEach(function(tk) {
+        if (!tickerMap[tk.ticker]) tickerMap[tk.ticker] = { ticker: tk.ticker, name: tk.name, sector: tk.sector, mentions: [] };
+        tickerMap[tk.ticker].mentions.push({ channel: d.channelName, title: v.title, sentiment: sentiment, date: v.date });
+        if (!chTickers.some(function(ct) { return ct.ticker === tk.ticker; })) chTickers.push(tk);
+      });
+
+      if (d.articles[i]) {
+        (d.articles[i].portfolioActions || []).forEach(function(a) { if (allPortfolioActions.indexOf(a) === -1) allPortfolioActions.push(a); });
+        (d.articles[i].keyPoints || []).forEach(function(p) { if (allKeyPoints.indexOf(p) === -1) allKeyPoints.push(p); });
+      }
+    });
+
+    channelAnalysis.push({ name: d.channelName, videoCount: d.videos.length, topics: chTopics, tickers: chTickers, sentiments: chSentiments, noRecentVideos: d.noRecentVideos });
+  });
+
+  var sortedTickers = Object.values(tickerMap).sort(function(a, b) { return b.mentions.length - a.mentions.length; });
+  var sortedTopics = Object.keys(topicCounts).sort(function(a, b) { return topicCounts[b] - topicCounts[a]; });
+  var totalVideos = keys.reduce(function(s, k) { return s + channelData[k].videos.length; }, 0);
+  var totalSent = sentimentMap.bullish + sentimentMap.bearish + sentimentMap.neutral;
+  var bullPct = totalSent ? Math.round(sentimentMap.bullish / totalSent * 100) : 0;
+  var bearPct = totalSent ? Math.round(sentimentMap.bearish / totalSent * 100) : 0;
+  var concIdx = 0;
+  var html = '';
+
+  // ═══════════════════════════════════════
+  // SECTION 1: Executive Summary
+  // ═══════════════════════════════════════
+  var moodWord = 'ניטרלי'; var moodColor = 'var(--text-dim)';
+  if (bullPct > bearPct + 15) { moodWord = 'אופטימי'; moodColor = '#4CAF50'; }
+  else if (bearPct > bullPct + 15) { moodWord = 'זהיר'; moodColor = '#e74c3c'; }
+  else if (bullPct > bearPct) { moodWord = 'נוטה לאופטימיות'; moodColor = '#8BC34A'; }
+  else if (bearPct > bullPct) { moodWord = 'נוטה לזהירות'; moodColor = '#FF9800'; }
+
+  html += '<div class="conclusion-section" id="conc-' + concIdx + '">';
+  html += '<div class="conclusion-title" style="font-size:1.5rem;">תקציר מנהלים</div>';
+  html += '<div class="conclusion-content">';
+  var noRecentCount = keys.filter(function(k) { return channelData[k].noRecentVideos; }).length;
+  var activeChannels = keys.length - noRecentCount;
+  html += '<p style="font-size:1rem;line-height:1.8;margin-bottom:16px;">';
+  html += 'סריקה של <strong style="color:var(--gold-light)">' + totalVideos + ' סרטונים</strong> מ-<strong style="color:var(--gold-light)">' + activeChannels + ' ערוצים</strong> פעילים (3 ימים אחרונים). ';
+  if (noRecentCount > 0) html += '<span style="color:var(--text-dim);">' + noRecentCount + ' ערוצים ללא פרסום חדש.</span> ';
+  html += 'הסנטימנט הכללי: <strong style="color:' + moodColor + '">' + moodWord + '</strong>. ';
+
+  if (sortedTopics.length > 0) {
+    var top3Topics = sortedTopics.slice(0, 3).map(function(t) { return topicLabels[t] || t; });
+    html += 'הנושאים שחוזרים הכי הרבה: ' + top3Topics.join(', ') + '. ';
+  }
+  if (sortedTickers.length > 0) {
+    var top3Tickers = sortedTickers.slice(0, 3).map(function(t) { return t.ticker; });
+    html += 'הנכסים הכי מדוברים: <strong style="color:var(--gold-light)">' + top3Tickers.join(', ') + '</strong>.';
+  }
+  html += '</p>';
+
+  // Sentiment bar
+  html += '<div style="display:flex;height:8px;border-radius:4px;overflow:hidden;margin-bottom:16px;">';
+  if (bullPct > 0) html += '<div style="width:' + bullPct + '%;background:#4CAF50;"></div>';
+  if (100 - bullPct - bearPct > 0) html += '<div style="width:' + (100 - bullPct - bearPct) + '%;background:#333;"></div>';
+  if (bearPct > 0) html += '<div style="width:' + bearPct + '%;background:#e74c3c;"></div>';
+  html += '</div>';
+  html += '<div style="display:flex;justify-content:space-between;font-size:0.7rem;color:var(--text-dim);">';
+  html += '<span style="color:#4CAF50;">' + bullPct + '% חיובי</span><span style="color:#e74c3c;">' + bearPct + '% שלילי</span></div>';
+  html += '</div></div>';
+  concIdx++;
+
+  // ═══════════════════════════════════════
+  // SECTION 2: Watchlist — Stocks & Indices
+  // ═══════════════════════════════════════
+  if (sortedTickers.length > 0) {
+    html += '<div class="conclusion-section" id="conc-' + concIdx + '">';
+    html += '<div class="conclusion-title">רשימת מעקב — מניות ומדדים</div>';
+    html += '<div class="conclusion-content">';
+
+    // Table-style layout
+    html += '<div style="border:1px solid var(--card-border);border-radius:8px;overflow:hidden;">';
+    // Header
+    html += '<div style="display:grid;grid-template-columns:80px 1fr 100px 80px 1fr;gap:0;background:#0d0d0d;padding:10px 14px;font-size:0.7rem;color:var(--gold);text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--card-border);">';
+    html += '<div>טיקר</div><div>שם</div><div>סנטימנט</div><div>אזכורים</div><div>ערוצים</div>';
+    html += '</div>';
+
+    sortedTickers.slice(0, 10).forEach(function(tk, i) {
+      var bullC = 0; var bearC = 0; var chList = [];
+      tk.mentions.forEach(function(m) {
+        if (m.sentiment === 'bullish') bullC++;
+        else if (m.sentiment === 'bearish') bearC++;
+        if (chList.indexOf(m.channel) === -1) chList.push(m.channel);
+      });
+      var icon = '⚪'; var sentLabel = 'ניטרלי';
+      if (bullC > bearC) { icon = '🟢'; sentLabel = 'חיובי'; }
+      if (bearC > bullC) { icon = '🔴'; sentLabel = 'שלילי'; }
+      if (bullC > 0 && bearC > 0 && Math.abs(bullC - bearC) <= 1) { icon = '🟡'; sentLabel = 'מעורב'; }
+
+      var bg = i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)';
+      html += '<div style="display:grid;grid-template-columns:80px 1fr 100px 80px 1fr;gap:0;padding:10px 14px;font-size:0.82rem;border-bottom:1px solid #1a1a1a;background:' + bg + ';">';
+      html += '<div style="font-weight:700;color:var(--gold-light);">' + escapeHtml(tk.ticker) + '</div>';
+      html += '<div style="color:var(--text);">' + escapeHtml(tk.name) + ' <span style="color:var(--text-dim);font-size:0.7rem;">(' + escapeHtml(tk.sector) + ')</span></div>';
+      html += '<div>' + icon + ' ' + sentLabel + '</div>';
+      html += '<div style="color:var(--text-dim);">' + tk.mentions.length + ' (' + chList.length + ' ערוצים)</div>';
+      html += '<div style="color:var(--text-dim);font-size:0.72rem;">' + chList.slice(0, 3).map(escapeHtml).join(', ') + (chList.length > 3 ? '...' : '') + '</div>';
+      html += '</div>';
+    });
+    html += '</div>'; // end table
+
+    // Consensus alerts
+    var consensusBull = sortedTickers.filter(function(tk) {
+      var bc = []; tk.mentions.forEach(function(m) { if (m.sentiment === 'bullish' && bc.indexOf(m.channel) === -1) bc.push(m.channel); });
+      return bc.length >= 2;
+    });
+    var consensusBear = sortedTickers.filter(function(tk) {
+      var bc = []; tk.mentions.forEach(function(m) { if (m.sentiment === 'bearish' && bc.indexOf(m.channel) === -1) bc.push(m.channel); });
+      return bc.length >= 2;
+    });
+
+    if (consensusBull.length > 0 || consensusBear.length > 0) {
+      html += '<div style="margin-top:14px;">';
+      if (consensusBull.length > 0) {
+        html += '<div style="background:#1a2e1a;border:1px solid #2d4a2d;border-radius:8px;padding:12px;margin-bottom:8px;">';
+        html += '<div style="font-size:0.75rem;color:#81C784;margin-bottom:4px;">🟢 קונצנזוס חיובי ממספר ערוצים</div>';
+        html += '<div style="font-size:0.9rem;color:#4CAF50;font-weight:600;">' + consensusBull.map(function(t) { return t.ticker; }).join(', ') + '</div>';
+        html += '</div>';
+      }
+      if (consensusBear.length > 0) {
+        html += '<div style="background:#2e1a1a;border:1px solid #4a2d2d;border-radius:8px;padding:12px;">';
+        html += '<div style="font-size:0.75rem;color:#ef9a9a;margin-bottom:4px;">🔴 אזהרה ממספר ערוצים</div>';
+        html += '<div style="font-size:0.9rem;color:#e74c3c;font-weight:600;">' + consensusBear.map(function(t) { return t.ticker; }).join(', ') + '</div>';
+        html += '</div>';
+      }
+      html += '</div>';
+    }
+    html += '</div></div>';
+    concIdx++;
+  }
+
+  // ═══════════════════════════════════════
+  // SECTION 3: What each channel is saying
+  // ═══════════════════════════════════════
+  html += '<div class="conclusion-section" id="conc-' + concIdx + '">';
+  html += '<div class="conclusion-title">מה כל ערוץ אומר — סיכום לפי מקור</div>';
+  html += '<div class="conclusion-content">';
+
+  channelAnalysis.forEach(function(ch) {
+    var chKey = keys.find(function(k) { return channelData[k].channelName === ch.name; });
+    var chData = channelData[chKey];
+
+    html += '<div style="background:#0d0d0d;border:1px solid var(--card-border);border-radius:8px;padding:16px;margin-bottom:10px;">';
+
+    if (ch.noRecentVideos) {
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
+      html += '<strong style="color:var(--gold-light);font-size:1.05rem;">' + escapeHtml(ch.name) + '</strong>';
+      html += '<span style="font-size:0.78rem;color:var(--text-dim);">📭 אין פרסום</span></div>';
+      html += '<div style="font-size:0.78rem;color:var(--text-dim);margin-top:8px;">לא פורסמו סרטונים חדשים ב-3 הימים האחרונים</div>';
+      html += '</div>';
+      return;
+    }
+
+    var mainTopics = Object.keys(ch.topics).sort(function(a, b) { return ch.topics[b] - ch.topics[a]; });
+
+    var sentIcon = '⚪'; var sentWord = 'ניטרלי';
+    if (ch.sentiments.bullish > ch.sentiments.bearish) { sentIcon = '🟢'; sentWord = 'חיובי'; }
+    else if (ch.sentiments.bearish > ch.sentiments.bullish) { sentIcon = '🔴'; sentWord = 'זהיר'; }
+
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">';
+    html += '<strong style="color:var(--gold-light);font-size:1.05rem;">' + escapeHtml(ch.name) + '</strong>';
+    html += '<span style="font-size:0.78rem;">' + sentIcon + ' ' + sentWord + '</span></div>';
+
+    // Video list with full analytical breakdown
+    chData.videos.forEach(function(v, vi) {
+      var sent = detectSentiment(v.title);
+      var tickers = detectTickers(v.title);
+      var article = chData.articles[vi];
+
+      html += '<div style="padding:10px 0;border-top:1px solid #1a1a1a;">';
+
+      // Title + date + sentiment
+      html += '<div style="display:flex;gap:8px;align-items:flex-start;font-size:0.85rem;margin-bottom:6px;">';
+      html += '<span style="flex-shrink:0;">' + getSentimentEmoji(sent) + '</span>';
+      html += '<span style="color:var(--text);font-weight:600;">' + escapeHtml(v.title) + '</span>';
+      html += '</div>';
+      if (v.date) html += '<div style="font-size:0.68rem;color:var(--text-dim);margin-bottom:6px;padding-right:24px;">' + v.date + '</div>';
+
+      // Tickers mentioned — prominent
+      if (tickers.length > 0) {
+        html += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;padding-right:24px;">';
+        tickers.forEach(function(tk) {
+          var tkColor = sent === 'bullish' ? '#4CAF50' : sent === 'bearish' ? '#e74c3c' : 'var(--gold)';
+          html += '<span style="background:rgba(212,175,55,0.12);border:1px solid ' + tkColor + ';border-radius:4px;padding:2px 8px;font-size:0.72rem;color:' + tkColor + ';font-weight:600;">' + tk.ticker + ' — ' + escapeHtml(tk.name) + '</span>';
+        });
+        html += '</div>';
+      }
+
+      // Article summary
+      if (article && article.summary) {
+        html += '<div style="font-size:0.78rem;color:var(--text-dim);padding-right:24px;line-height:1.7;margin-bottom:6px;">' + escapeHtml(article.summary) + '</div>';
+      }
+
+      // Key portfolio action from this video (first action)
+      if (article && article.portfolioActions && article.portfolioActions.length > 0) {
+        html += '<div style="font-size:0.72rem;padding-right:24px;margin-top:4px;">';
+        html += '<span style="color:var(--gold);font-weight:600;">⚡ פעולה: </span>';
+        html += '<span style="color:var(--text);">' + escapeHtml(article.portfolioActions[0]) + '</span>';
+        html += '</div>';
+      }
+
+      html += '</div>';
+    });
+
+    // Channel-level summary
+    if (ch.tickers.length > 0) {
+      html += '<div style="border-top:1px solid var(--gold-dim);padding-top:8px;margin-top:4px;">';
+      html += '<div style="font-size:0.72rem;color:var(--gold);">📊 נכסים שמוזכרים בערוץ: <strong>' + ch.tickers.map(function(t) { return t.ticker; }).join(', ') + '</strong></div>';
+      html += '</div>';
+    }
+    html += '</div>';
+  });
+  html += '</div></div>';
+  concIdx++;
+
+  // ═══════════════════════════════════════
+  // SECTION 4: Portfolio Action Items
+  // ═══════════════════════════════════════
+  html += '<div class="conclusion-section" id="conc-' + concIdx + '">';
+  html += '<div class="conclusion-title" style="color:#4CAF50;">המלצות לפעולה בפורטפוליו</div>';
+  html += '<div class="conclusion-content">';
+
+  // Dynamic portfolio recommendations based on data
+  var actions = [];
+  var topTopic = sortedTopics[0] || 'MARKET';
+
+  // Based on overall sentiment
+  if (bullPct > bearPct + 20) {
+    actions.push({ priority: 'גבוהה', text: 'השוק אופטימי — שמרו על חשיפה מנייתית אך הגדירו סטופים. אופוריה יכולה להסתיים מהר.', type: 'warning' });
+  } else if (bearPct > bullPct + 20) {
+    actions.push({ priority: 'גבוהה', text: 'סנטימנט שלילי חזק — בדקו שיש לכם מספיק מזומן בצד. תיקונים יוצרים הזדמנויות אבל לא כדאי לתפוס סכינים.', type: 'risk' });
+  } else {
+    actions.push({ priority: 'בינונית', text: 'סנטימנט מעורב — שוק בנקודת החלטה. עדיף להקטין גודל פוזיציות חדשות ולהמתין לכיוון ברור.', type: 'neutral' });
+  }
+
+  // Based on dominant topics
+  if (topicCounts['CORRECTION'] >= 2 || topicCounts['RECESSION'] >= 2) {
+    actions.push({ priority: 'גבוהה', text: 'מספר ערוצים מדברים על תיקון/מיתון — וודאו שהתיק מגודר: הגדילו מזומן, בדקו חשיפה לסקטורים דפנסיביים, שקלו אג"ח קצר.', type: 'risk' });
+  }
+  if (topicCounts['AI'] >= 3 || topicCounts['NVIDIA'] >= 2) {
+    actions.push({ priority: 'בינונית', text: 'AI ממשיך לשלוט בשיח — אם אין לכם חשיפה, שקלו ETF כמו SOXX או SMH. אם יש לכם — בדקו אם החשיפה לא גדולה מדי.', type: 'action' });
+  }
+  if (topicCounts['FED'] >= 2) {
+    actions.push({ priority: 'בינונית', text: 'הריבית על הפרק — שימו לב לתאריכי החלטת ריבית קרובים. מומלץ לא לפתוח פוזיציות גדולות ימים לפני.', type: 'event' });
+  }
+  if (topicCounts['CRYPTO'] >= 2) {
+    actions.push({ priority: 'נמוכה', text: 'קריפטו חם שוב — אם יש לכם חשיפה, בדקו שהיא לא עולה על 5-10% מהתיק. אם אין, DCA עדיף על כניסה חד-פעמית.', type: 'action' });
+  }
+
+  // Based on specific tickers
+  if (sortedTickers.length > 0) {
+    var topTk = sortedTickers[0];
+    var tkBull = topTk.mentions.filter(function(m) { return m.sentiment === 'bullish'; }).length;
+    var tkBear = topTk.mentions.filter(function(m) { return m.sentiment === 'bearish'; }).length;
+    if (tkBull > tkBear) {
+      actions.push({ priority: 'בינונית', text: topTk.ticker + ' (' + topTk.name + ') — הנכס הכי מדובר עם סנטימנט חיובי. אם מעניין אתכם, עשו מחקר על המכפיל הנוכחי לפני כניסה.', type: 'action' });
+    } else if (tkBear > tkBull) {
+      actions.push({ priority: 'גבוהה', text: topTk.ticker + ' (' + topTk.name + ') — הנכס הכי מדובר אבל עם אזהרות. אם יש לכם חשיפה, שקלו הקטנה או גידור.', type: 'risk' });
+    }
+  }
+
+  // General
+  actions.push({ priority: 'תמיד', text: 'הנתונים מבוססים על כותרות סרטונים ולא על ניתוח פונדמנטלי. כל פעולה בפורטפוליו דורשת מחקר עצמאי נוסף.', type: 'disclaimer' });
+
+  var priorityColors = { 'גבוהה': '#e74c3c', 'בינונית': '#FF9800', 'נמוכה': '#4CAF50', 'תמיד': 'var(--text-dim)' };
+  var typeIcons = { 'warning': '⚠️', 'risk': '🛡️', 'action': '💡', 'event': '📅', 'neutral': '⚖️', 'disclaimer': 'ℹ️' };
+
+  actions.forEach(function(a) {
+    var pColor = priorityColors[a.priority] || 'var(--text-dim)';
+    var icon = typeIcons[a.type] || '▸';
+    html += '<div style="display:flex;gap:12px;padding:12px;margin-bottom:8px;background:#0d0d0d;border:1px solid var(--card-border);border-radius:8px;border-right:3px solid ' + pColor + ';">';
+    html += '<div style="flex-shrink:0;font-size:1.2rem;">' + icon + '</div>';
+    html += '<div>';
+    html += '<div style="font-size:0.68rem;color:' + pColor + ';text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">עדיפות: ' + escapeHtml(a.priority) + '</div>';
+    html += '<div style="font-size:0.85rem;color:var(--text);line-height:1.6;">' + escapeHtml(a.text) + '</div>';
+    html += '</div></div>';
+  });
+  html += '</div></div>';
+  concIdx++;
+
+  // ═══════════════════════════════════════
+  // SECTION 5: Events & Things to Watch
+  // ═══════════════════════════════════════
+  html += '<div class="conclusion-section" id="conc-' + concIdx + '">';
+  html += '<div class="conclusion-title">אירועים ודברים לעקוב אחריהם</div>';
+  html += '<div class="conclusion-content">';
+
+  var watchItems = [];
+  if (topicCounts['EARNINGS'] >= 1) watchItems.push({ icon: '📊', text: 'עונת דוחות — עקבו אחרי תאריכי פרסום של חברות שאתם מחזיקים. הפתעות (חיוביות ושליליות) יוצרות מהלכים חדים.' });
+  if (topicCounts['FED'] >= 1) watchItems.push({ icon: '🏦', text: 'החלטת ריבית — בדקו את CME FedWatch Tool לראות מה השוק מתמחר. פער בין ציפיות לתוצאה = תנודתיות.' });
+  if (topicCounts['GEOPOLITICS'] >= 1) watchItems.push({ icon: '🌍', text: 'מתיחויות גיאופוליטיות — השפעה על סחורות, שרשראות אספקה ומדדי סיכון. פיזור גיאוגרפי חשוב.' });
+  if (topicCounts['AI'] >= 2) watchItems.push({ icon: '🤖', text: 'AI — עקבו אחרי הוצאות CAPEX של Hyperscalers (MSFT, GOOGL, AMZN). זה הביקוש האמיתי, לא ההייפ.' });
+  if (topicCounts['CRYPTO'] >= 1) watchItems.push({ icon: '₿', text: 'קריפטו — עקבו אחרי זרימות ל-ETF ספוט ואחרי רגולציה. הביקוש המוסדי הוא המפתח.' });
+  if (topicCounts['CORRECTION'] >= 1 || topicCounts['VOLATILITY'] >= 1) watchItems.push({ icon: '📉', text: 'VIX ותנודתיות — מעל 20 זה דגל אדום לזהירות, מתחת ל-15 זה זמן לבנות גידורים בזול.' });
+  if (sortedTickers.some(function(t) { return t.sector && t.sector.includes('Commodities'); })) watchItems.push({ icon: '🥇', text: 'סחורות — מלאי נפט שבועי (EIA), מחיר זהב כמד פחד, ויחס נחושת/זהב כמד בריאות כלכלית.' });
+
+  if (watchItems.length === 0) watchItems.push({ icon: '👀', text: 'עקבו אחרי הנושאים שעלו — כשמספר ערוצים בלתי תלויים מדברים על אותו דבר, זה בדרך כלל רלוונטי.' });
+
+  watchItems.forEach(function(item) {
+    html += '<div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid #1a1a1a;align-items:flex-start;">';
+    html += '<span style="font-size:1.1rem;flex-shrink:0;">' + item.icon + '</span>';
+    html += '<span style="font-size:0.85rem;color:var(--text);line-height:1.6;">' + escapeHtml(item.text) + '</span>';
+    html += '</div>';
+  });
+  html += '</div></div>';
+  concIdx++;
+
+  // ═══════════════════════════════════════
+  // SECTION 6: Failed channels
+  // ═══════════════════════════════════════
+  if (failedKeys.length > 0) {
+    html += '<div class="conclusion-section" id="conc-' + concIdx + '">';
+    html += '<div class="conclusion-title">ערוצים שלא נטענו</div>';
+    html += '<div class="conclusion-content">';
+    failedKeys.forEach(function(tabId) {
+      var ch = CHANNELS.find(function(c) { return c.id === tabId; });
+      var label = ch ? ch.label : tabId;
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #1a1a1a;">';
+      html += '<span style="color:var(--text-dim);">' + escapeHtml(label) + ' — ' + escapeHtml(failedTabs[tabId]) + '</span>';
+      html += '<button class="btn" onclick="retryFromConclusions(\'' + escapeHtml(tabId) + '\')" style="font-size:0.75rem;padding:6px 16px;">נסה שנית</button>';
+      html += '</div>';
+    });
+    html += '</div></div>';
+    concIdx++;
+  }
+
+  panel.innerHTML = html;
+  panel.classList.add('visible');
+
+  for (var i = 0; i < concIdx; i++) {
+    (function(idx) {
+      setTimeout(function() {
+        var el = document.getElementById('conc-' + idx);
+        if (el) el.classList.add('visible');
+      }, 150 + idx * 180);
+    })(i);
+  }
+}
+
+function retryFromConclusions(tabId) {
+  delete failedTabs[tabId];
+  switchTab(tabId);
+}
+
+// ——— Load preset channel ———
+async function loadPresetChannel(tabId) {
+  var ch = CHANNELS.find(function(c) { return c.id === tabId; });
+  if (!ch) return;
+
+  setTabLoading(tabId, true);
+  clearError();
+  setStatus('מתחבר לערוץ ' + ch.label + '...');
+  document.getElementById('grid').innerHTML = '';
+  document.getElementById('channelInfo').classList.remove('visible');
+
+  try {
+    var info = await fetchChannelId(ch.handle);
+    setStatus('מושך סרטונים אחרונים...');
+    var videos = await fetchLatestVideos(info.channelId);
+
+    if (videos.length === 0) {
+      // No recent videos in last 3 days
+      channelData[tabId] = {
+        channelName: info.name,
+        channelMeta: info.subscribers || 'Channel ID: ' + info.channelId,
+        videos: [],
+        articles: [],
+        noRecentVideos: true
+      };
+      markTabLoaded(tabId);
+      setStatus('');
+      if (activeTab === tabId) {
+        showChannelData(tabId);
+      }
+      return;
+    }
+
+    setStatus('מייצר כתבות...');
+    var articles = videos.map(function(v) { return generateArticle(v.title); });
+
+    channelData[tabId] = {
+      channelName: info.name,
+      channelMeta: info.subscribers || 'Channel ID: ' + info.channelId,
+      videos: videos,
+      articles: articles,
+      noRecentVideos: false
+    };
+
+    markTabLoaded(tabId);
+    setStatus('');
+
+    if (activeTab === tabId) {
+      showChannelData(tabId);
+    }
+  } catch (err) {
+    failedTabs[tabId] = err.message || 'שגיאה בלתי צפויה';
+    showError(err.message || 'שגיאה בלתי צפויה');
+    showRetryButton(tabId);
+    setStatus('');
+  } finally {
+    setTabLoading(tabId, false);
+  }
+}
+
+function showRetryButton(tabId) {
+  var grid = document.getElementById('grid');
+  grid.innerHTML = '<div style="text-align:center;padding:40px 0;">' +
+    '<p style="color:var(--text-dim);margin-bottom:16px;">הטעינה נכשלה — נסה שנית</p>' +
+    '<button class="btn" onclick="retryChannel(\'' + tabId + '\')" style="font-size:0.9rem;padding:10px 24px;">נסה שנית</button>' +
+    '</div>';
+}
+
+function retryChannel(tabId) {
+  delete failedTabs[tabId];
+  clearError();
+  if (tabId === 'custom') loadCustomChannel();
+  else loadPresetChannel(tabId);
+}
+
+// ——— Run All Channels ———
+var runAllActive = false;
+
+async function runAllChannels() {
+  if (runAllActive) return;
+  runAllActive = true;
+
+  var btn = document.getElementById('runAllBtn');
+  btn.disabled = true;
+  btn.classList.add('loading');
+
+  var progressEl = document.getElementById('runAllProgress');
+  var barWrap = document.getElementById('progressBarWrap');
+  var bar = document.getElementById('progressBar');
+  barWrap.classList.add('visible');
+
+  var toLoad = CHANNELS.filter(function(ch) { return !channelData[ch.id]; });
+  var total = toLoad.length;
+
+  if (total === 0) {
+    progressEl.textContent = 'כל הערוצים כבר נטענו!';
+    bar.style.width = '100%';
+    btn.disabled = false;
+    btn.classList.remove('loading');
+    runAllActive = false;
+    setTimeout(function() {
+      barWrap.classList.remove('visible');
+      progressEl.textContent = '';
+      switchTab('conclusions');
+    }, 1200);
+    return;
+  }
+
+  var loaded = 0;
+  var failed = 0;
+
+  for (var i = 0; i < toLoad.length; i++) {
+    var ch = toLoad[i];
+    progressEl.textContent = 'טוען ' + ch.label + '... (' + (loaded + failed + 1) + '/' + total + ')';
+    bar.style.width = ((loaded + failed) / total * 100) + '%';
+
+    try {
+      var info = await fetchChannelId(ch.handle);
+      var videos = await fetchLatestVideos(info.channelId);
+      var articles = videos.length > 0 ? videos.map(function(v) { return generateArticle(v.title); }) : [];
+
+      channelData[ch.id] = {
+        channelName: info.name,
+        channelMeta: info.subscribers || 'Channel ID: ' + info.channelId,
+        videos: videos,
+        articles: articles,
+        noRecentVideos: videos.length === 0
+      };
+      markTabLoaded(ch.id);
+      delete failedTabs[ch.id];
+      loaded++;
+    } catch (err) {
+      failedTabs[ch.id] = err.message || 'שגיאה';
+      var tabEl = document.getElementById('tab-' + ch.id);
+      if (tabEl) tabEl.style.borderColor = '#e74c3c';
+      failed++;
+    }
+
+    bar.style.width = ((loaded + failed) / total * 100) + '%';
+  }
+
+  bar.style.width = '100%';
+  var msg = 'הושלם: ' + loaded + ' ערוצים נטענו';
+  if (failed > 0) msg += ', ' + failed + ' נכשלו';
+  progressEl.textContent = msg;
+
+  btn.disabled = false;
+  btn.classList.remove('loading');
+  runAllActive = false;
+
+  // Auto-switch to conclusions after a moment
+  setTimeout(function() {
+    switchTab('conclusions');
+    setTimeout(function() {
+      barWrap.classList.remove('visible');
+    }, 1000);
+  }, 1500);
+}
+
+// ——— Load custom channel ———
+async function loadCustomChannel() {
+  var input = document.getElementById('customInput').value.trim();
+  if (!input) { showError('נא להזין קישור לערוץ YouTube'); return; }
+
+  setTabLoading('custom', true);
+  clearError();
+  setStatus('מתחבר לערוץ...');
+  document.getElementById('grid').innerHTML = '';
+  document.getElementById('channelInfo').classList.remove('visible');
+
+  try {
+    var info = await fetchChannelInfoFromUrl(input);
+    setStatus('מושך סרטונים אחרונים...');
+    var videos = await fetchLatestVideos(info.channelId);
+    var articles = videos.length > 0 ? videos.map(function(v) { return generateArticle(v.title); }) : [];
+
+    channelData['custom'] = {
+      channelName: info.name,
+      channelMeta: info.subscribers || 'Channel ID: ' + info.channelId,
+      videos: videos,
+      articles: articles,
+      noRecentVideos: videos.length === 0
+    };
+
+    markTabLoaded('custom');
+    setStatus('');
+
+    if (activeTab === 'custom') {
+      showChannelData('custom');
+    }
+  } catch (err) {
+    failedTabs['custom'] = err.message || 'שגיאה בלתי צפויה';
+    showError(err.message || 'שגיאה בלתי צפויה');
+    showRetryButton('custom');
+    setStatus('');
+  } finally {
+    setTabLoading('custom', false);
+  }
+}
+
+// Enter key for custom input
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && activeTab === 'custom') loadCustomChannel();
+});
+
+// ═══════════════════════════════════════════
+// ——— Market Dashboard ———
+// ═══════════════════════════════════════════
+var dashboardOpen = false;
+var dashLoading = false;
+
+var DASH_SYMBOLS = {
+  fx: [
+    { symbol: 'USDILS=X', label: 'דולר / שקל', flag: '🇺🇸🇮🇱', decimals: 4 },
+    { symbol: 'EURILS=X', label: 'יורו / שקל', flag: '🇪🇺🇮🇱', decimals: 4 },
+    { symbol: 'EURUSD=X', label: 'יורו / דולר', flag: '🇪🇺🇺🇸', decimals: 4 },
+    { symbol: 'GBPUSD=X', label: 'ליש"ט / דולר', flag: '🇬🇧🇺🇸', decimals: 4 },
+    { symbol: 'DX-Y.NYB', label: 'מדד דולר (DXY)', flag: '💵', decimals: 2 }
+  ],
+  indices: [
+    { symbol: '^GSPC', label: 'S&P 500', flag: '🇺🇸', decimals: 2 },
+    { symbol: '^IXIC', label: 'Nasdaq Composite', flag: '🇺🇸', decimals: 2 },
+    { symbol: '^DJI', label: 'Dow Jones', flag: '🇺🇸', decimals: 0 },
+    { symbol: '^RUT', label: 'Russell 2000', flag: '🇺🇸', decimals: 2 },
+    { symbol: '^TA125.TA', label: 'ת"א 125', flag: '🇮🇱', decimals: 2 },
+    { symbol: '^STOXX50E', label: 'Euro Stoxx 50', flag: '🇪🇺', decimals: 2 }
+  ],
+  bonds: [
+    { symbol: '^TNX', label: 'US 10Y Treasury', flag: '🏛️', decimals: 3, suffix: '%' },
+    { symbol: '^TYX', label: 'US 30Y Treasury', flag: '🏛️', decimals: 3, suffix: '%' },
+    { symbol: '^FVX', label: 'US 5Y Treasury', flag: '🏛️', decimals: 3, suffix: '%' },
+    { symbol: '^VIX', label: 'VIX (פחד)', flag: '⚡', decimals: 2 }
+  ],
+  commodities: [
+    { symbol: 'GC=F', label: 'זהב (Gold)', flag: '🥇', decimals: 2, prefix: '$' },
+    { symbol: 'SI=F', label: 'כסף (Silver)', flag: '🥈', decimals: 2, prefix: '$' },
+    { symbol: 'CL=F', label: 'נפט WTI', flag: '🛢️', decimals: 2, prefix: '$' },
+    { symbol: 'BTC-USD', label: 'Bitcoin', flag: '₿', decimals: 0, prefix: '$' },
+    { symbol: 'ETH-USD', label: 'Ethereum', flag: 'Ξ', decimals: 0, prefix: '$' }
+  ]
+};
+
+function toggleDashboard() {
+  dashboardOpen = !dashboardOpen;
+  var wrap = document.getElementById('dashboardWrap');
+  var btn = document.getElementById('dashToggle');
+  if (dashboardOpen) {
+    wrap.classList.add('visible');
+    btn.classList.add('active');
+    // Show empty placeholder cards (no auto-fetch)
+    if (!document.querySelector('.dash-card')) {
+      renderDashCards('dashFx', DASH_SYMBOLS.fx);
+      renderDashCards('dashIndices', DASH_SYMBOLS.indices);
+      renderDashCards('dashBonds', DASH_SYMBOLS.bonds);
+      renderDashCards('dashCommodities', DASH_SYMBOLS.commodities);
+      document.getElementById('dashUpdated').textContent = 'לחצו "עדכן" לטעינת נתונים';
+    }
+  } else {
+    wrap.classList.remove('visible');
+    btn.classList.remove('active');
+  }
+}
+
+function renderDashCards(containerId, items) {
+  var el = document.getElementById(containerId);
+  el.innerHTML = '';
+  items.forEach(function(item) {
+    var card = document.createElement('div');
+    card.className = 'dash-card loading';
+    card.id = 'dash-' + item.symbol.replace(/[^a-zA-Z0-9]/g, '_');
+    card.innerHTML =
+      '<div class="label"><span class="flag">' + item.flag + '</span>' + escapeHtml(item.label) + '</div>' +
+      '<div class="price" style="color:var(--text-dim);">—</div>' +
+      '<div class="change flat">טוען...</div>';
+    el.appendChild(card);
+  });
+}
+
+// ─── FX: Direct API — no proxy needed, CORS-enabled, 1 call for all rates ───
+async function fetchFxRates() {
+  var resp = await fetch('https://open.er-api.com/v6/latest/USD');
+  if (!resp.ok) throw new Error('FX API error ' + resp.status);
+  var data = await resp.json();
+  return data.rates; // { ILS: 3.65, EUR: 0.92, GBP: 0.79, ... }
+}
+
+// ─── Yahoo Finance via Vercel serverless proxy (works from any origin incl. file://) ───
+var QUOTE_API = 'https://youts-dashboard.vercel.app/api/quote';
+
+async function fetchQuoteBatch(symbols) {
+  try {
+    var c = new AbortController();
+    var t = setTimeout(function() { c.abort(); }, 15000);
+    var r = await fetch(QUOTE_API + '?symbols=' + encodeURIComponent(symbols.join(',')), { signal: c.signal });
+    clearTimeout(t);
+    if (!r.ok) return {};
+    return await r.json();
+  } catch(e) { return {}; }
+}
+
+async function fetchQuote(symbol) {
+  var batch = await fetchQuoteBatch([symbol]);
+  return batch[symbol] || null;
+}
+
+function updateDashCard(symbol, itemDef, quoteData) {
+  var cardId = 'dash-' + symbol.replace(/[^a-zA-Z0-9]/g, '_');
+  var card = document.getElementById(cardId);
+  if (!card) return;
+
+  var price = quoteData.price;
+  var prevClose = quoteData.prevClose;
+  var change = price && prevClose ? price - prevClose : 0;
+  var changePct = prevClose ? (change / prevClose * 100) : 0;
+  var isUp = change > 0.001;
+  var isDown = change < -0.001;
+
+  var prefix = itemDef.prefix || '';
+  var suffix = itemDef.suffix || '';
+  var priceStr = prefix + Number(price).toLocaleString(undefined, { minimumFractionDigits: itemDef.decimals, maximumFractionDigits: itemDef.decimals }) + suffix;
+
+  var arrow = isUp ? '▲' : isDown ? '▼' : '—';
+  var sign = isUp ? '+' : '';
+  var changeStr = arrow + ' ' + sign + change.toFixed(itemDef.decimals) + ' (' + sign + changePct.toFixed(2) + '%)';
+  var cls = isUp ? 'up' : isDown ? 'down' : 'flat';
+
+  card.classList.remove('loading');
+  card.querySelector('.price').style.color = '';
+  card.querySelector('.price').textContent = priceStr;
+  card.querySelector('.change').className = 'change ' + cls;
+  card.querySelector('.change').textContent = changeStr;
+}
+
+function setDashCardError(symbol) {
+  var cardId = 'dash-' + symbol.replace(/[^a-zA-Z0-9]/g, '_');
+  var card = document.getElementById(cardId);
+  if (!card) return;
+  card.classList.remove('loading');
+  card.querySelector('.price').textContent = '—';
+  card.querySelector('.change').className = 'change flat';
+  card.querySelector('.change').textContent = 'לא זמין';
+}
+
+async function refreshDashboard() {
+  if (dashLoading) return;
+  dashLoading = true;
+  var btn = document.getElementById('dashRefreshBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ טוען...';
+
+  renderDashCards('dashFx', DASH_SYMBOLS.fx);
+  renderDashCards('dashIndices', DASH_SYMBOLS.indices);
+  renderDashCards('dashBonds', DASH_SYMBOLS.bonds);
+  renderDashCards('dashCommodities', DASH_SYMBOLS.commodities);
+
+  var loaded = 0, failed = 0;
+
+  // ── FX: direct API, instant ──
+  try {
+    var rates = await fetchFxRates();
+    var fxPairs = {};
+    if (rates.ILS) fxPairs['USDILS=X'] = rates.ILS;
+    if (rates.ILS && rates.EUR) fxPairs['EURILS=X'] = rates.ILS / rates.EUR;
+    if (rates.EUR) fxPairs['EURUSD=X'] = 1 / rates.EUR;
+    if (rates.GBP) fxPairs['GBPUSD=X'] = 1 / rates.GBP;
+    if (rates.EUR && rates.JPY && rates.GBP && rates.CAD && rates.SEK && rates.CHF) {
+      fxPairs['DX-Y.NYB'] = 50.14348112 * Math.pow(1/rates.EUR,0.576) * Math.pow(rates.JPY,0.136) * Math.pow(1/rates.GBP,0.119) * Math.pow(rates.CAD,0.091) * Math.pow(rates.SEK,0.042) * Math.pow(rates.CHF,0.036);
+    }
+    DASH_SYMBOLS.fx.forEach(function(item) {
+      if (fxPairs[item.symbol]) {
+        var card = document.getElementById('dash-' + item.symbol.replace(/[^a-zA-Z0-9]/g, '_'));
+        if (card) {
+          card.classList.remove('loading');
+          card.querySelector('.price').style.color = '';
+          card.querySelector('.price').textContent = (item.prefix||'') + fxPairs[item.symbol].toFixed(item.decimals) + (item.suffix||'');
+          card.querySelector('.change').className = 'change flat';
+          card.querySelector('.change').textContent = 'שער יומי';
+        }
+        loaded++;
+      } else { setDashCardError(item.symbol); failed++; }
+    });
+  } catch(e) {
+    DASH_SYMBOLS.fx.forEach(function(item) { setDashCardError(item.symbol); failed++; });
+  }
+
+  // ── All other items: single batch API call for all symbols ──
+  var allItems = [].concat(DASH_SYMBOLS.indices, DASH_SYMBOLS.bonds, DASH_SYMBOLS.commodities);
+  btn.textContent = '⏳ מדדים (' + allItems.length + ')...';
+
+  var allSymbols = allItems.map(function(item) { return item.symbol; });
+  var batchResults = await fetchQuoteBatch(allSymbols);
+  allItems.forEach(function(item) {
+    var q = batchResults[item.symbol];
+    if (q) { updateDashCard(item.symbol, item, q); loaded++; }
+    else { setDashCardError(item.symbol); failed++; }
+  });
+
+  // ── Done ──
+  var now = new Date();
+  var ts = now.toLocaleString('he-IL', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  document.getElementById('dashUpdated').textContent = 'עודכן: ' + ts + ' · ' + loaded + ' נטענו';
+  if (failed > 0) document.getElementById('dashUpdated').textContent += ', ' + failed + ' נכשלו';
+  btn.disabled = false;
+  btn.textContent = '🔄 עדכן';
+  dashLoading = false;
+}
+
+// ——— Init ———
+initTabs();
+switchTab('micha');
+</script>
+
+</body>
+</html>
