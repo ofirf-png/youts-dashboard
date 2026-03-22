@@ -1064,27 +1064,53 @@ function generateArticle(title) {
         else actions.push('עקבו אחרי ' + tk.ticker + ' (' + tk.name + ') — שימו בוואצ\'ליסט ובחנו נקודת כניסה');
       });
     }
-    var topicActions = {
-      'AI': ['בחנו חשיפה ל-AI בתיק — הסקטור מוביל צמיחה','הקצו 10-15% מהתיק לנושא AI דרך מניות ו-ETFs'],
-      'NVIDIA': ['עקבו אחרי דוח נבידיה הקרוב — trigger לפוזיציה','שקלו NVDA כאחזקת ליבה בחשיפת טכנולוגיה'],
-      'MARKET': ['וודאו פיזור נכון — אל תהיו ממוקדים בסקטור אחד','שמרו על 15-20% מזומן לניצול הזדמנויות'],
-      'CRYPTO': ['הגבילו חשיפת קריפטו ל-2-5% מהתיק','BTC דרך ETF כחשיפה מוסדית בטוחה יותר'],
-      'FED': ['התכוננו למספר תרחישי ריבית — לא להמר על כיוון אחד','סקרו חשיפה לנכסים רגישי ריבית (נדל"ן, growth)'],
-      'TESLA': ['הגדירו stop-loss ברור — המניה תנודתית','גודל פוזיציה: לא יותר מ-3-5% מהתיק'],
-      'CORRECTION': ['הכינו רשימת קנייה עם מחירי יעד','הגדילו מזומן ב-10% נוספים לניצול תיקון'],
-      'OPPORTUNITY': ['בצעו due diligence לפני כניסה','הגדירו thesis, target ו-stop לכל פוזיציה חדשה'],
-      'EARNINGS': ['הקטינו פוזיציות לפני דוחות של אחזקות מרכזיות','הכינו תוכנית: מה עושים ב-beat ומה ב-miss'],
-      'RECESSION': ['הגדילו דפנסיביים: utilities, healthcare, staples','שמרו על נזילות גבוהה — cash is king לפני מיתון'],
-      'GEOPOLITICS': ['שקלו חשיפה לזהב ולסחורות כגידור','פזרו גיאוגרפית — אל תהיו 100% US'],
-      'ENERGY': ['חשיפה מאוזנת: אנרגיה מסורתית + ירוקה','עקבו אחרי מלאי נפט ו-OPEC כטריגרים'],
-      'COMMODITIES': ['שקלו GLD/IAU כגידור אינפלציוני 5-10%','סחורות כרכיב גידור — לא כהשקעה מרכזית'],
-      'BONDS': ['שקלו הקצאה לאג"ח — תשואות אטרקטיביות','בנו bond ladder לפיזור סיכון ריבית'],
-      'DIVIDEND': ['בנו תיק דיבידנדים מגוון — לא רק yield גבוה','SCHD/VIG כבסיס + בחירות נקודתיות'],
-      'VOLATILITY': ['הקטינו גודל פוזיציות עד שהתנודתיות תרד','שקלו protective puts על אחזקות ליבה'],
-      'REALESTATE': ['בחנו REITs בדיסקאונט — VNQ, O, AMT','עקבו אחרי שינויי ריבית כטריגר לנדל"ן']
+    var topicActionsPool = {
+      'AI': [
+        'בחנו חשיפה ל-AI בתיק — הסקטור מוביל צמיחה',
+        'הקצו 10-15% מהתיק לנושא AI דרך מניות ו-ETFs',
+        'עקבו אחרי שרשרת האספקה של AI — לא רק השמות הגדולים',
+        'בדקו חשיפה דרך SOXX או SMH כחלופה מפוזרת'
+      ],
+      'NVIDIA': [
+        'עקבו אחרי דוח נבידיה הקרוב — trigger לפוזיציה',
+        'שקלו NVDA כאחזקת ליבה בחשיפת טכנולוגיה',
+        'שקלו חשיפה דרך שרשרת האספקה (TSMC, ASML) כחלופה בסיכון נמוך יותר',
+        'הגדירו יעד מחיר ו-stop loss לפני כניסה ל-NVDA'
+      ],
+      'MARKET': [
+        'וודאו פיזור נכון — אל תהיו ממוקדים בסקטור אחד',
+        'שמרו על 15-20% מזומן לניצול הזדמנויות',
+        'בדקו את ה-breadth של השוק — האם העלייה רחבה או ממוקדת',
+        'סקרו את היחס בין סקטורים דפנסיביים למחזוריים בתיק',
+        'בחנו אם הגיע הזמן לאזן מחדש את התיק',
+        'עקבו אחרי VIX — תנודתיות נמוכה עלולה להיות שקט לפני סערה',
+        'בדקו חשיפה גיאוגרפית — האם התיק ממוקד מדי ב-US',
+        'הגדירו trailing stop על אחזקות שעלו חזק'
+      ],
+      'CRYPTO': ['הגבילו חשיפת קריפטו ל-2-5% מהתיק','BTC דרך ETF כחשיפה מוסדית בטוחה יותר','עקבו אחרי dominance של ביטקוין מול אלטים','שקלו DCA במקום כניסה חד-פעמית לקריפטו'],
+      'FED': ['התכוננו למספר תרחישי ריבית — לא להמר על כיוון אחד','סקרו חשיפה לנכסים רגישי ריבית (נדל"ן, growth)','עקבו אחרי ציפיות השוק דרך CME FedWatch','שקלו הקצאה לאג"ח קצר טווח כהגנה'],
+      'TESLA': ['הגדירו stop-loss ברור — המניה תנודתית','גודל פוזיציה: לא יותר מ-3-5% מהתיק','עקבו אחרי מספרי משלוחים כטריגר מרכזי','שקלו options כחשיפה מוגבלת סיכון'],
+      'CORRECTION': ['הכינו רשימת קנייה עם מחירי יעד','הגדילו מזומן ב-10% נוספים לניצול תיקון','אל תנסו לתפוס את התחתית — קנו בפרוסות','בדקו אילו מניות איכות נמצאות בהנחה'],
+      'OPPORTUNITY': ['בצעו due diligence לפני כניסה','הגדירו thesis, target ו-stop לכל פוזיציה חדשה','אל תיכנסו בכל הכסף בבת אחת — בנו פוזיציה בהדרגה','בדקו האם ההזדמנות מתאימה לפרופיל הסיכון שלכם'],
+      'EARNINGS': ['הקטינו פוזיציות לפני דוחות של אחזקות מרכזיות','הכינו תוכנית: מה עושים ב-beat ומה ב-miss','עקבו אחרי ה-guidance יותר מהמספרים עצמם','בדקו expectations — לפעמים beat זה לא מספיק'],
+      'RECESSION': ['הגדילו דפנסיביים: utilities, healthcare, staples','שמרו על נזילות גבוהה — cash is king לפני מיתון','שקלו אג"ח ממשלתי כנכס הגנה','בדקו חברות עם מאזן חזק שישרדו מיתון'],
+      'GEOPOLITICS': ['שקלו חשיפה לזהב ולסחורות כגידור','פזרו גיאוגרפית — אל תהיו 100% US','עקבו אחרי מדד הפחד הגיאופוליטי','שקלו חברות ביטחון ואנרגיה כגידור'],
+      'ENERGY': ['חשיפה מאוזנת: אנרגיה מסורתית + ירוקה','עקבו אחרי מלאי נפט ו-OPEC כטריגרים','שקלו XLE או VDE כחשיפה מפוזרת לסקטור','בדקו את היחס בין מחירי נפט למניות אנרגיה'],
+      'COMMODITIES': ['שקלו GLD/IAU כגידור אינפלציוני 5-10%','סחורות כרכיב גידור — לא כהשקעה מרכזית','עקבו אחרי מדד הדולר כאינדיקטור לסחורות','שקלו DBA לחשיפה לסחורות חקלאיות'],
+      'BONDS': ['שקלו הקצאה לאג"ח — תשואות אטרקטיביות','בנו bond ladder לפיזור סיכון ריבית','בדקו TLT לטווח ארוך או SHY לטווח קצר','עקבו אחרי עקום התשואות כאינדיקטור מקרו'],
+      'DIVIDEND': ['בנו תיק דיבידנדים מגוון — לא רק yield גבוה','SCHD/VIG כבסיס + בחירות נקודתיות','בדקו payout ratio — דיבידנד גבוה מדי עלול להיחתך','עדיפו חברות עם היסטוריה של העלאות דיבידנד'],
+      'VOLATILITY': ['הקטינו גודל פוזיציות עד שהתנודתיות תרד','שקלו protective puts על אחזקות ליבה','אל תמכרו בפאניקה — תנודתיות יוצרת הזדמנויות','הגדירו מראש רמות שבהן תפעלו'],
+      'REALESTATE': ['בחנו REITs בדיסקאונט — VNQ, O, AMT','עקבו אחרי שינויי ריבית כטריגר לנדל"ן','שקלו נדל"ן תעשייתי ו-data centers כמגמה','בדקו occupancy rates ו-FFO לפני כניסה']
     };
-    var ta = topicActions[primary] || topicActions['MARKET'];
-    ta.forEach(function(a) { if (actions.indexOf(a) === -1) actions.push(a); });
+    // Pick 2 actions from pool based on title hash to ensure variety per video
+    var titleHash = 0;
+    for (var ci = 0; ci < title.length; ci++) titleHash = ((titleHash << 5) - titleHash + title.charCodeAt(ci)) | 0;
+    titleHash = Math.abs(titleHash);
+    var pool = topicActionsPool[primary] || topicActionsPool['MARKET'];
+    var pick1 = titleHash % pool.length;
+    var pick2 = (titleHash + 1 + Math.floor(titleHash / pool.length)) % pool.length;
+    if (pick2 === pick1) pick2 = (pick1 + 1) % pool.length;
+    [pool[pick1], pool[pick2]].forEach(function(a) { if (actions.indexOf(a) === -1) actions.push(a); });
   } else {
     if (tickers.length > 0) {
       tickers.forEach(function(tk) {
@@ -1862,14 +1888,14 @@ function toggleDashboard() {
   if (dashboardOpen) {
     wrap.classList.add('visible');
     btn.classList.add('active');
-    // Show empty placeholder cards (no auto-fetch)
+    // Auto-load data when dashboard opens
     if (!document.querySelector('.dash-card')) {
       renderDashCards('dashFx', DASH_SYMBOLS.fx);
       renderDashCards('dashIndices', DASH_SYMBOLS.indices);
       renderDashCards('dashBonds', DASH_SYMBOLS.bonds);
       renderDashCards('dashCommodities', DASH_SYMBOLS.commodities);
-      document.getElementById('dashUpdated').textContent = 'לחצו "עדכן" לטעינת נתונים';
     }
+    refreshDashboard();
   } else {
     wrap.classList.remove('visible');
     btn.classList.remove('active');
