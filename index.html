@@ -321,6 +321,18 @@
       </div>
     </div>
 
+    <div id="fearGreedMeter" style="display:none;margin-bottom:20px;padding:16px 20px;border-radius:10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);text-align:center;">
+      <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:2px;color:var(--gold);margin-bottom:8px;">מדד פחד ותאוות בצע (Fear & Greed)</div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:20px;">
+        <div id="fgScore" style="font-size:2.2rem;font-weight:700;"></div>
+        <div id="fgLabel" style="font-size:1rem;font-weight:600;"></div>
+      </div>
+      <div style="margin-top:10px;height:8px;border-radius:4px;background:linear-gradient(to right,#e53935,#ff9800,#fdd835,#8bc34a,#43a047);position:relative;">
+        <div id="fgPointer" style="position:absolute;top:-4px;width:16px;height:16px;border-radius:50%;border:2px solid #fff;transform:translateX(-50%);transition:left 0.5s;"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:0.6rem;color:var(--text-dim);margin-top:4px;"><span>פחד קיצוני</span><span>פחד</span><span>ניטרלי</span><span>תאוות בצע</span><span>תאוות בצע קיצונית</span></div>
+    </div>
+
     <div class="dash-section-label">שערי חליפין</div>
     <div class="dashboard-grid" id="dashFx"></div>
 
@@ -2061,6 +2073,38 @@ async function refreshDashboard() {
   var topBtn = document.getElementById('dashRefreshTopBtn');
   if (topBtn) { topBtn.disabled = false; topBtn.textContent = '🔄 עדכן נתוני שוק'; }
   dashLoading = false;
+
+  // Update Fear & Greed meter based on VIX
+  updateFearGreed();
+}
+
+function updateFearGreed() {
+  var vixCard = document.getElementById('dash-_VIX');
+  if (!vixCard) return;
+  var priceEl = vixCard.querySelector('.price');
+  if (!priceEl) return;
+  var vix = parseFloat(priceEl.textContent);
+  if (isNaN(vix)) return;
+
+  // Convert VIX to Fear & Greed score (0-100, 100=extreme greed)
+  // VIX ~10 = extreme greed (score ~95), VIX ~20 = neutral (score ~50), VIX ~35+ = extreme fear (score ~5)
+  var score = Math.round(Math.max(0, Math.min(100, 100 - ((vix - 10) / 30) * 100)));
+
+  var label, color;
+  if (score <= 20) { label = 'פחד קיצוני'; color = '#e53935'; }
+  else if (score <= 40) { label = 'פחד'; color = '#ff9800'; }
+  else if (score <= 60) { label = 'ניטרלי'; color = '#fdd835'; }
+  else if (score <= 80) { label = 'תאוות בצע'; color = '#8bc34a'; }
+  else { label = 'תאוות בצע קיצונית'; color = '#43a047'; }
+
+  var meter = document.getElementById('fearGreedMeter');
+  meter.style.display = 'block';
+  document.getElementById('fgScore').textContent = score;
+  document.getElementById('fgScore').style.color = color;
+  document.getElementById('fgLabel').textContent = label;
+  document.getElementById('fgLabel').style.color = color;
+  document.getElementById('fgPointer').style.left = score + '%';
+  document.getElementById('fgPointer').style.background = color;
 }
 
 // ——— Init ———
