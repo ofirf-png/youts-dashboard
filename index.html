@@ -2078,33 +2078,55 @@ async function refreshDashboard() {
   updateFearGreed();
 }
 
-function updateFearGreed() {
-  var vixCard = document.getElementById('dash-_VIX');
-  if (!vixCard) return;
-  var priceEl = vixCard.querySelector('.price');
-  if (!priceEl) return;
-  var vix = parseFloat(priceEl.textContent);
-  if (isNaN(vix)) return;
+async function updateFearGreed() {
+  try {
+    var r = await fetch(QUOTE_API.replace('/quote', '/feargreed'), { signal: AbortSignal.timeout(10000) });
+    if (!r.ok) throw new Error('API error');
+    var data = await r.json();
+    var score = data.score;
 
-  // Convert VIX to Fear & Greed score (0-100, 100=extreme greed)
-  // VIX ~10 = extreme greed (score ~95), VIX ~20 = neutral (score ~50), VIX ~35+ = extreme fear (score ~5)
-  var score = Math.round(Math.max(0, Math.min(100, 100 - ((vix - 10) / 30) * 100)));
+    var ratingMap = {
+      'Extreme Fear': 'פחד קיצוני',
+      'Fear': 'פחד',
+      'Neutral': 'ניטרלי',
+      'Greed': 'תאוות בצע',
+      'Extreme Greed': 'תאוות בצע קיצונית'
+    };
+    var label = ratingMap[data.rating] || data.rating;
 
-  var label, color;
-  if (score <= 20) { label = 'פחד קיצוני'; color = '#e53935'; }
-  else if (score <= 40) { label = 'פחד'; color = '#ff9800'; }
-  else if (score <= 60) { label = 'ניטרלי'; color = '#fdd835'; }
-  else if (score <= 80) { label = 'תאוות בצע'; color = '#8bc34a'; }
-  else { label = 'תאוות בצע קיצונית'; color = '#43a047'; }
+    var color;
+    if (score <= 20) color = '#e53935';
+    else if (score <= 40) color = '#ff9800';
+    else if (score <= 60) color = '#fdd835';
+    else if (score <= 80) color = '#8bc34a';
+    else color = '#43a047';
 
-  var meter = document.getElementById('fearGreedMeter');
-  meter.style.display = 'block';
-  document.getElementById('fgScore').textContent = score;
-  document.getElementById('fgScore').style.color = color;
-  document.getElementById('fgLabel').textContent = label;
-  document.getElementById('fgLabel').style.color = color;
-  document.getElementById('fgPointer').style.left = score + '%';
-  document.getElementById('fgPointer').style.background = color;
+    var meter = document.getElementById('fearGreedMeter');
+    meter.style.display = 'block';
+    document.getElementById('fgScore').textContent = score;
+    document.getElementById('fgScore').style.color = color;
+    document.getElementById('fgLabel').textContent = label;
+    document.getElementById('fgLabel').style.color = color;
+    document.getElementById('fgPointer').style.left = score + '%';
+    document.getElementById('fgPointer').style.background = color;
+
+    if (data.previous) {
+      var histEl = document.getElementById('fgHistory');
+      if (!histEl) {
+        histEl = document.createElement('div');
+        histEl.id = 'fgHistory';
+        histEl.style.cssText = 'margin-top:10px;font-size:0.7rem;color:var(--text-dim);display:flex;justify-content:center;gap:20px;';
+        meter.appendChild(histEl);
+      }
+      histEl.innerHTML =
+        '<span>סגירה קודמת: <b style="color:var(--text);">' + data.previous.previousClose + '</b></span>' +
+        '<span>לפני שבוע: <b style="color:var(--text);">' + data.previous.oneWeekAgo + '</b></span>' +
+        '<span>לפני חודש: <b style="color:var(--text);">' + data.previous.oneMonthAgo + '</b></span>' +
+        '<span>לפני שנה: <b style="color:var(--text);">' + data.previous.oneYearAgo + '</b></span>';
+    }
+  } catch(e) {
+    document.getElementById('fearGreedMeter').style.display = 'none';
+  }
 }
 
 // ——— Init ———
