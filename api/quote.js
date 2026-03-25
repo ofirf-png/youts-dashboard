@@ -10,17 +10,68 @@ export default async function handler(req, res) {
   const results = {};
   const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
 
+  // Try to get rich data from v6 quote endpoint for all symbols at once
+  var richData = {};
+  try {
+    const quoteUrl = `https://query1.finance.yahoo.com/v6/finance/quote?symbols=${encodeURIComponent(symList.join(','))}`;
+    const qr = await fetch(quoteUrl, { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(8000) });
+    if (qr.ok) {
+      const qd = await qr.json();
+      if (qd.quoteResponse && qd.quoteResponse.result) {
+        qd.quoteResponse.result.forEach(function(item) {
+          richData[item.symbol] = item;
+        });
+      }
+    }
+  } catch(e) {}
+
+  // If v6 failed, try v7
+  if (Object.keys(richData).length === 0) {
+    try {
+      const quoteUrl7 = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(symList.join(','))}`;
+      const qr7 = await fetch(quoteUrl7, { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(8000) });
+      if (qr7.ok) {
+        const qd7 = await qr7.json();
+        if (qd7.quoteResponse && qd7.quoteResponse.result) {
+          qd7.quoteResponse.result.forEach(function(item) {
+            richData[item.symbol] = item;
+          });
+        }
+      }
+    } catch(e) {}
+  }
+
   await Promise.all(symList.map(async (sym) => {
     const s = sym.trim();
     try {
-      // Fetch chart data (1y range for 52W) + summary data in parallel
-      const chartUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(s)}?interval=1d&range=1y&includePrePost=false`;
-      const summaryUrl = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(s)}?modules=price,defaultKeyStatistics,summaryDetail`;
+      // If we have rich data from v6/v7, use it directly
+      var rd = richData[s];
+      if (rd && rd.regularMarketPrice) {
+        results[s] = {
+          price: rd.regularMarketPrice,
+          prevClose: rd.regularMarketPreviousClose || rd.regularMarketPrice,
+          dayHigh: rd.regularMarketDayHigh || rd.regularMarketPrice,
+          dayLow: rd.regularMarketDayLow || rd.regularMarketPrice,
+          volume: rd.regularMarketVolume || 0,
+          avgVolume: rd.averageDailyVolume3Month || rd.averageDailyVolume10Day || 0,
+          week52High: rd.fiftyTwoWeekHigh || 0,
+          week52Low: rd.fiftyTwoWeekLow || 0,
+          marketCap: rd.marketCap || 0,
+          trailingPE: rd.trailingPE || 0,
+          forwardPE: rd.forwardPE || 0,
+          beta: 0,
+          dividendYield: rd.trailingAnnualDividendYield || 0,
+          epsTrailing: rd.epsTrailingTwelveMonths || 0,
+          currency: rd.currency || 'USD',
+          exchangeName: rd.exchange || '',
+          shortName: rd.shortName || rd.longName || s
+        };
+        return;
+      }
 
-      const [chartResp, summaryResp] = await Promise.all([
-        fetch(chartUrl, { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(8000) }),
-        fetch(summaryUrl, { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(8000) }).catch(() => null)
-      ]);
+      // Fallback: use chart API
+      const chartUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(s)}?interval=1d&range=1y&includePrePost=false`;
+      const chartResp = await fetch(chartUrl, { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(8000) });
 
       if (!chartResp.ok) { results[s] = null; return; }
       const chartData = await chartResp.json();
@@ -33,7 +84,6 @@ export default async function handler(req, res) {
 
       let price = meta.regularMarketPrice;
 
-      // Build daily data
       var dailyCloses = [];
       if (q && q.close) {
         for (var i = 0; i < q.close.length; i++) {
@@ -47,7 +97,6 @@ export default async function handler(req, res) {
         price = dailyCloses[dailyCloses.length - 1].close;
       }
 
-      // Previous close
       var prevClose = null;
       if (dailyCloses.length >= 2) {
         var lastTs = dailyCloses[dailyCloses.length - 1].ts;
@@ -59,7 +108,6 @@ export default async function handler(req, res) {
       }
       if (!prevClose) prevClose = meta.previousClose || meta.chartPreviousClose || price;
 
-      // Today's high/low/volume
       var dayHigh = 0, dayLow = Infinity, dayVolume = 0;
       if (dailyCloses.length > 0) {
         var todayStr = new Date(dailyCloses[dailyCloses.length - 1].ts * 1000).toDateString();
@@ -72,7 +120,6 @@ export default async function handler(req, res) {
       }
       if (dayLow === Infinity) dayLow = 0;
 
-      // 52-week high/low
       var week52High = 0, week52Low = Infinity;
       for (var m = 0; m < dailyCloses.length; m++) {
         if (dailyCloses[m].high && dailyCloses[m].high > week52High) week52High = dailyCloses[m].high;
@@ -80,7 +127,6 @@ export default async function handler(req, res) {
       }
       if (week52Low === Infinity) week52Low = 0;
 
-      // Average volume (last 60 days)
       var volSum = 0, volCount = 0;
       var startIdx = Math.max(0, dailyCloses.length - 60);
       for (var n = startIdx; n < dailyCloses.length; n++) {
@@ -88,44 +134,15 @@ export default async function handler(req, res) {
       }
       var avgVolume = volCount > 0 ? Math.round(volSum / volCount) : 0;
 
-      // Parse summary data for marketCap, PE, etc.
-      var marketCap = 0, trailingPE = 0, forwardPE = 0, beta = 0, dividendYield = 0, epsTrailing = 0;
-      var shortName = meta.shortName || meta.symbol || s;
-
-      if (summaryResp && summaryResp.ok) {
-        try {
-          const sumData = await summaryResp.json();
-          const qr = sumData && sumData.quoteSummary && sumData.quoteSummary.result && sumData.quoteSummary.result[0];
-          if (qr) {
-            const pr = qr.price || {};
-            const sd = qr.summaryDetail || {};
-            const ks = qr.defaultKeyStatistics || {};
-            marketCap = (pr.marketCap && pr.marketCap.raw) || 0;
-            trailingPE = (sd.trailingPE && sd.trailingPE.raw) || 0;
-            forwardPE = (sd.forwardPE && sd.forwardPE.raw) || (ks.forwardPE && ks.forwardPE.raw) || 0;
-            beta = (ks.beta && ks.beta.raw) || (sd.beta && sd.beta.raw) || 0;
-            dividendYield = (sd.dividendYield && sd.dividendYield.raw) || 0;
-            epsTrailing = (ks.trailingEps && ks.trailingEps.raw) || 0;
-            if (pr.shortName) shortName = pr.shortName;
-            // Use summary's volume/dayRange if chart didn't get it
-            if (!dayVolume && pr.regularMarketVolume && pr.regularMarketVolume.raw) dayVolume = pr.regularMarketVolume.raw;
-            if (!dayHigh && pr.regularMarketDayHigh && pr.regularMarketDayHigh.raw) dayHigh = pr.regularMarketDayHigh.raw;
-            if (!dayLow && pr.regularMarketDayLow && pr.regularMarketDayLow.raw) dayLow = pr.regularMarketDayLow.raw;
-            if (!week52High && sd.fiftyTwoWeekHigh && sd.fiftyTwoWeekHigh.raw) week52High = sd.fiftyTwoWeekHigh.raw;
-            if (!week52Low && sd.fiftyTwoWeekLow && sd.fiftyTwoWeekLow.raw) week52Low = sd.fiftyTwoWeekLow.raw;
-          }
-        } catch(e) { /* summary parse failed, continue with chart data */ }
-      }
-
       results[s] = price ? {
         price, prevClose,
         dayHigh: dayHigh || price, dayLow: dayLow || price,
         volume: dayVolume, avgVolume,
         week52High: week52High || price, week52Low: week52Low || price,
-        marketCap, trailingPE, forwardPE, beta, dividendYield, epsTrailing,
+        marketCap: 0, trailingPE: 0, forwardPE: 0, beta: 0, dividendYield: 0, epsTrailing: 0,
         currency: meta.currency || 'USD',
         exchangeName: meta.exchangeName || '',
-        shortName
+        shortName: meta.shortName || meta.symbol || s
       } : null;
     } catch (e) {
       results[s] = null;
