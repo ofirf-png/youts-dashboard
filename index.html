@@ -710,211 +710,391 @@ function getSentimentLabel(s) {
   return 'ניטרלי';
 }
 
-// ——— Hebrew article templates ———
+// ——— Hebrew templates — hedge fund morning note style ———
 var HEB = {
-  tldr: {
-    'AI': 'התפתחויות משמעותיות בתחום הבינה המלאכותית מציבות אתגרים והזדמנויות חדשות למשקיעים. הסקטור ממשיך להוביל את הצמיחה בשוק, אך נדרשת סלקטיביות גבוהה.',
-    'NVIDIA': 'נבידיה ממשיכה להוביל את מהפכת ה-AI עם ביקוש חסר תקדים לשבבים. השאלה המרכזית היא האם ההערכות הנוכחיות כבר מגלמות את פוטנציאל הצמיחה.',
-    'MARKET': 'השוק נמצא בנקודת מפנה עם מספר גורמים מאקרו שמשפיעים על הכיוון. ניתוח מעמיק של הנתונים מצביע על כמה מגמות מפתח שחשוב לעקוב אחריהן.',
-    'CRYPTO': 'שוק הקריפטו חווה תנודות משמעותיות על רקע שינויים רגולטוריים ומאקרו-כלכליים. הביקוש המוסדי ממשיך לגדול, אך הסיכונים עדיין גבוהים.',
-    'FED': 'מדיניות הפד ממשיכה להשפיע באופן ישיר על כל שוקי ההון. ההחלטות הקרובות צפויות לקבוע את הכיוון לחודשים הבאים.',
-    'TESLA': 'טסלה ממשיכה להוות אחת המניות הפולריזנטיות בשוק. בין חדשנות טכנולוגית לאתגרים תפעוליים, המניה מציבה דילמה מעניינת למשקיעים.',
-    'CORRECTION': 'השוק חווה תיקון שמעלה שאלות לגבי הכיוון הבא. ניתוח היסטורי מראה שתיקונים כאלה יכולים להיות הזדמנות, אך נדרשת זהירות.',
-    'OPPORTUNITY': 'מתגלות הזדמנויות השקעה מעניינות בשוק הנוכחי. סינון חכם של הרעש יכול לחשוף פוזיציות עם יחס סיכוי-סיכון אטרקטיבי.',
-    'RECESSION': 'אינדיקטורים כלכליים מעלים חששות לגבי האטה משמעותית. ההיסטוריה מלמדת שהכנה מוקדמת היא המפתח להתמודדות עם תקופות כאלה.',
-    'GEOPOLITICS': 'מתיחויות גיאופוליטיות מוסיפות שכבת אי-ודאות לשווקים. משקיעים נדרשים לשקול תרחישים מרובים בבניית האסטרטגיה שלהם.',
-    'ENERGY': 'שוק האנרגיה נמצא בנקודת מפנה עם שינויים מבניים בהיצע ובביקוש. ההשלכות חורגות הרבה מעבר לסקטור האנרגיה עצמו.',
-    'COMMODITIES': 'שוק הסחורות מראה מגמות מעניינות שמשקפות שינויים מאקרו-כלכליים רחבים. הבנה של הדינמיקה חיונית לבניית תיק מגוון.',
-    'BONDS': 'שוק האג"ח שולח אותות חשובים לגבי הציפיות הכלכליות. התשואות הנוכחיות מציבות אלטרנטיבה רצינית למניות.',
-    'DIVIDEND': 'אסטרטגיית דיבידנדים חוזרת לקדמת הבמה בתנאי השוק הנוכחיים. בחירה נכונה של מניות דיבידנד יכולה לספק הכנסה יציבה וצמיחה.',
-    'VOLATILITY': 'רמות התנודתיות הנוכחיות דורשות התאמות באסטרטגיית ההשקעה. ניהול סיכונים נכון הופך לגורם המכריע בתקופה זו.',
-    'EARNINGS': 'עונת הדוחות חושפת את המצב האמיתי של החברות מאחורי הכותרות. הפערים בין ציפיות לתוצאות יוצרים הזדמנויות מסחר.',
-    'APPLE': 'אפל ממשיכה להיות אחת מאבני היסוד של תיקי השקעות רבים. ההתפתחויות האחרונות מעלות שאלות מעניינות לגבי הכיוון הבא.',
-    'REALESTATE': 'שוק הנדל"ן מציג דינמיקה מורכבת עם שינויים בריביות ובביקוש. ההשפעות מורגשות הן בשוק הפיזי והן בנדל"ן הנסחר.'
-  },
-  insights: {
-    'AI': ['המירוץ בתחום ה-AI מאיץ — חברות שלא יאמצו את הטכנולוגיה צפויות להישאר מאחור', 'ההשקעות ב-AI עוברות משלב ההייפ לשלב המימוש, עם דגש על ROI מוכח', 'הרגולציה בתחום צפויה להתהדק, מה שיצור יתרון לחברות עם תשתית קיימת'],
-    'NVIDIA': ['הביקוש לשבבי AI ממשיך לעלות על ההיצע, מה שתומך בצמיחה מתמשכת', 'התחרות מתעצמת עם כניסת שחקנים חדשים, אך היתרון הטכנולוגי עדיין משמעותי', 'המעבר למודלים מותאמים אישית מגדיל את שוק הכתובת עבור נבידיה'],
-    'MARKET': ['המומנטום בשוק מושפע ממספר גורמים מנוגדים שיוצרים סביבה מורכבת', 'סקטורים דפנסיביים מציגים חוזקה יחסית שמעידה על זהירות מוסדית', 'נתוני המאקרו מצביעים על כיוון שדורש התאמות בהקצאת הנכסים'],
-    'CRYPTO': ['האימוץ המוסדי של קריפטו יוצר רצפה חדשה למחירים', 'הרגולציה עוברת משלב ההתנגדות לשלב הגדרת המסגרת', 'הקורלציה עם שוקי ההון המסורתיים מצביעה על בשלות הולכת וגדלה'],
-    'FED': ['הציפיות לשינוי בריבית משפיעות על תמחור הנכסים לפני ההחלטה בפועל', 'הפער בין ציפיות השוק לתחזית הפד יוצר סיכון דו-כיווני', 'מדיניות צמצומית ממושכת עלולה ליצור הזדמנויות בנכסים שנפגעו'],
-    'TESLA': ['טסלה ממשיכה להוביל בחדשנות אך מתמודדת עם לחץ תחרותי גובר', 'שוק הרכב החשמלי עובר מצמיחת כמות לתחרות על רווחיות', 'הגיוון העסקי של טסלה מגדיל את פוטנציאל הצמיחה'],
-    'CORRECTION': ['תיקונים של 10-15% הם חלק טבעי ממחזורי שוק בריאים', 'הסנטימנט השלילי יוצר לרוב את ההזדמנויות הטובות ביותר לטווח ארוך', 'המפתח הוא להבחין בין תיקון טכני לבין שינוי מגמה מהותי'],
-    'OPPORTUNITY': ['הזדמנויות השקעה נוצרות כשיש פער בין תפיסת השוק לבין המציאות', 'סקטורים שנפגעו מעבר למה שמוצדק פונדמנטלית מציעים ערך', 'גישה ממוקדת ולא אמוציונלית היא המפתח לזיהוי הזדמנויות אמיתיות'],
-    'RECESSION': ['סימני האטה מופיעים לרוב חודשים לפני שהמיתון מתחיל רשמית', 'סקטורים שונים מגיבים בצורה שונה למיתון — יש מנצחים גם בתקופות קשות', 'נזילות וגמישות בתיק ההשקעות הם המפתח לניווט בתקופות אי-ודאות'],
-    'GEOPOLITICS': ['סיכונים גיאופוליטיים נוטים להיות זמניים בהשפעתם על השווקים', 'שרשראות אספקה עוברות ארגון מחדש שיוצר מנצחים ומפסידים חדשים', 'פיזור גיאוגרפי בתיק ההשקעות הופך לחשוב יותר מתמיד'],
-    'ENERGY': ['המעבר לאנרגיה נקייה מייצר ביקוש גם לאנרגיה מסורתית בתקופת המעבר', 'מחירי האנרגיה משפיעים על אינפלציה ובעקיפין על מדיניות מוניטרית', 'חברות אנרגיה עם תוכניות מעבר אמינות נהנות מפרמיית שוק'],
-    'COMMODITIES': ['מחירי הסחורות משמשים אינדיקטור מוביל לכיוון הכלכלה הגלובלית', 'חוסר האיזון בהיצע יוצר הזדמנויות מחזוריות בסחורות שונות', 'הדולר נשאר גורם מפתח בתמחור סחורות'],
-    'BONDS': ['עקום התשואות שולח מסרים חשובים על ציפיות הצמיחה', 'התשואות הנוכחיות הופכות אג"ח לחלופה אטרקטיבית למניות', 'משך חיים הוא מרכיב סיכון מרכזי שיש לנהל בזהירות'],
-    'DIVIDEND': ['חברות עם היסטוריית העלאת דיבידנד עקבית נוטות להניב ביצועים עודפים', 'שילוב דיבידנד וצמיחה מספק את האיזון האופטימלי לטווח ארוך', 'חשוב לוודא שיחס החלוקה בר-קיימא'],
-    'VOLATILITY': ['תנודתיות גבוהה היא חרב פיפיות — גם סיכון וגם הזדמנות', 'ניהול גודל פוזיציות חשוב יותר מבחירת הכיוון בתנאים כאלה', 'מכשירים לגידור סיכון הופכים לכלי חיוני'],
-    'EARNINGS': ['הפער בין ציפיות אנליסטים לתוצאות בפועל יוצר תנודות חדות', 'ההנחיות קדימה חשובות לא פחות מהתוצאות בפועל', 'מגמות מרווחיות הן האינדיקטור המוביל הטוב ביותר לכיוון המנייה'],
-    'APPLE': ['המערכת האקולוגית של אפל יוצרת נאמנות שמתורגמת להכנסות חוזרות', 'מעבר ל-AI והשירותים מגוון את מקורות ההכנסה', 'ההערכה הגבוהה מחייבת המשך חדשנות'],
-    'REALESTATE': ['שינויים בריבית משפיעים על תמחור נדל"ן בפיגור של 6-12 חודשים', 'עבודה מרחוק שינתה את הביקוש למשרדים באופן קבוע', 'נדל"ן למגורים נשאר חסין יחסית בזכות מחסור מבני']
-  },
-  howToApply: {
-    'AI': ['לבחון חשיפה ל-AI דרך ETF מגוון ולא רק מניות בודדות', 'לעקוב אחרי הוצאות CAPEX של חברות ה-AI הגדולות כאינדיקטור מוביל', 'לשלב ניתוח טכני עם פונדמנטלי כדי לתזמן כניסה לפוזיציה'],
-    'NVIDIA': ['לעקוב אחרי הזמנות של מרכזי נתונים כאינדיקטור מוביל', 'לשקול חשיפה דרך שרשרת האספקה', 'להגדיר רמות טייק-פרופיט ברורות בהתחשב בתנודתיות'],
-    'MARKET': ['לוודא פיזור נכון בין סקטורים ואזורים גיאוגרפיים', 'לשמור על נזילות מספקת לניצול הזדמנויות', 'לבחון מחדש את הקצאת הנכסים בהתאם לשינויי המאקרו'],
-    'CRYPTO': ['להגביל חשיפה לקריפטו לאחוז קטן מהתיק הכולל', 'להשתמש ב-DCA כאסטרטגיית כניסה', 'לפזר בין מטבעות שונים'],
-    'FED': ['לא להגיב באימפולס להחלטות ריבית', 'לשקול את ההשפעה על כל רכיבי התיק', 'להתכונן לתרחישים שונים עם אסטרטגיית ברבל'],
-    'TESLA': ['להגדיר מראש את גודל הפוזיציה', 'לעקוב אחרי נתוני מסירות רבעוניים', 'לשקול אופציות כדרך להגביל סיכון'],
-    'CORRECTION': ['להכין רשימת קניות מראש עם מחירי יעד', 'להיכנס בשלבים — לא לנסות לתפוס את התחתית', 'לבדוק שהתיק לא חשוף יתר לסקטור אחד'],
-    'OPPORTUNITY': ['לבצע בדיקת נאותות מעמיקה לפני כניסה', 'להגדיר סטופ-לוס ויעדי רווח לפני הכניסה', 'לוודא שההזדמנות מתאימה לפרופיל הסיכון'],
-    'RECESSION': ['להגדיל חשיפה לסקטורים דפנסיביים ולחברות עם מאזן חזק', 'לשמור על רזרבה מזומנים גדולה מהרגיל', 'לבחון מחדש את כל הפוזיציות ולהגדיר סטופים'],
-    'GEOPOLITICS': ['לא לבצע מהלכים דרסטיים על בסיס חדשות בלבד', 'לפזר גיאוגרפית כדי להפחית חשיפה', 'לשקול חשיפה לסחורות כגידור'],
-    'ENERGY': ['לשקול חשיפה מאוזנת לאנרגיה מסורתית ונקייה', 'לעקוב אחרי מלאי הנפט ותחזיות OPEC', 'להתחשב בהשפעת מחירי האנרגיה על שאר התיק'],
-    'COMMODITIES': ['להשתמש ב-ETF סחורות כרכיב גידור', 'לעקוב אחרי יחסי מחירי סחורות', 'לשקול חשיפה עקיפה דרך מניות יצרניות'],
-    'BONDS': ['להתאים את משך החיים הממוצע לציפיות הריבית', 'לשקול סולם אג"ח לפיזור סיכון', 'לבדוק מרווחי אשראי כאינדיקטור לסיכון'],
-    'DIVIDEND': ['לבנות תיק דיבידנדים מגוון סקטוריאלית', 'לבדוק את יציבות הדיבידנד ולא רק את גובהו', 'להשקיע מחדש דיבידנדים לריבית דריבית'],
-    'VOLATILITY': ['להקטין גודל פוזיציות בתקופות תנודתיות', 'לשקול אסטרטגיות אופציות לניהול סיכון', 'לא לקבל החלטות בימים של תנודות קיצוניות'],
-    'EARNINGS': ['לעקוב אחרי ציפיות אנליסטים לפני הדוח', 'לשקול הקטנת פוזיציה לפני דוח', 'להתמקד בהנחיות קדימה'],
-    'APPLE': ['לנתח את צמיחת מגזר השירותים', 'לעקוב אחרי מגמות מכירות באייפון', 'לשקול את אפל כאחזקת ליבה'],
-    'REALESTATE': ['לפזר חשיפה בין סגמנטים שונים', 'לעקוב אחרי שיעורי תפוסה וצמיחת שכירות', 'לשקול REITs כחלופה נזילה']
-  },
-  tools: {
-    'AI': ['מודלים של NLP ומכונת למידה', 'ניתוח סנטימנט בזמן אמת', 'גרפים של שרשרת ערך AI', 'מדדי אימוץ טכנולוגי'],
-    'NVIDIA': ['ניתוח מחזורי שבבים', 'מעקב אחרי הזמנות TSMC', 'השוואת מכפילים סקטוריאלית', 'ניתוח נתח שוק GPU'],
-    'MARKET': ['ניתוח טכני רב-מסגרת', 'מדד VIX ונגזרותיו', 'יחס Put/Call כמד סנטימנט', 'מפת חום סקטוריאלית'],
-    'CRYPTO': ['ניתוח On-Chain', 'מעקב אחרי ארנקי לווייתנים', 'מדד פחד וחמדנות קריפטו', 'השוואת ביצועי מטבעות'],
-    'FED': ['עקום התשואות וניתוח השטחה/תלילות', 'CME FedWatch Tool', 'מדדי אינפלציה ב-breakeven', 'ניתוח dot plot'],
-    'TESLA': ['נתוני מסירות רבעוניים', 'ניתוח נתח שוק EV', 'השוואת מרווחים תפעוליים', 'מעקב אחרי פטנטים'],
-    'CORRECTION': ['רמות תמיכה והתנגדות מפתח', 'ממוצעים נעים 50/200', 'מדד RSI ומומנטום', 'ניתוח נפחי מסחר'],
-    'OPPORTUNITY': ['סורק מניות לפי ערך', 'ניתוח DCF מהיר', 'השוואת מכפילים היסטוריים', 'מיפוי סנטימנט שוק'],
-    'RECESSION': ['מדד PMI ייצור ושירותים', 'תביעות אבטלה שבועיות', 'מדד LEI אינדיקטורים מובילים', 'פערי אשראי HY vs IG'],
-    'GEOPOLITICS': ['מדד סיכון גיאופוליטי', 'מחירי סחורות אסטרטגיות', 'מעקב אחרי שרשראות אספקה', 'ניתוח חשיפה גיאוגרפית'],
-    'ENERGY': ['מלאי נפט שבועי EIA', 'מעקב אחרי החלטות OPEC+', 'ניתוח crack spread', 'מגמות צריכת אנרגיה'],
-    'COMMODITIES': ['מדד Bloomberg Commodity', 'יחסי זהב-נחושת', 'עונתיות בסחורות', 'ניתוח Contango/Backwardation'],
-    'BONDS': ['עקום תשואות ממשלתי', 'מרווחי אשראי קונצרני', 'Duration ו-Convexity', 'ציפיות אינפלציה TIPS'],
-    'DIVIDEND': ['יחס חלוקת דיבידנד', 'היסטוריית העלאות רצופה', 'Dividend Yield vs Growth', 'ניתוח תזרים מזומנים חופשי'],
-    'VOLATILITY': ['מדד VIX ומבנה עתידי', 'Implied vs Realized Vol', 'סטיית תקן היסטורית', 'ניתוח סקיו באופציות'],
-    'EARNINGS': ['ציפיות EPS ו-Revenue', 'Earnings Whisper Number', 'השוואה רבעון מקביל', 'ניתוח הנחיות הנהלה'],
-    'APPLE': ['נתוני מכירות לפי מוצר', 'צמיחת מגזר שירותים', 'ניתוח ASP לאייפון', 'השוואת מכפילים vs FAANG'],
-    'REALESTATE': ['מדד שילר למחירי בתים', 'שיעורי תפוסה לפי סקטור', 'Cap Rate Analysis', 'מדד REIT סקטוריאלי']
-  },
-  analysis: {
-    'AI': 'מהפכת ה-AI נכנסת לשלב חדש שבו התוצאות העסקיות מתחילות להחליף את ההבטחות. חברות שמצליחות להראות ROI אמיתי צפויות ליהנות מעליית ערך, בעוד שחברות שנשארות ברמת השיווק עלולות לאכזב. המפתח הוא לזהות חברות שבאמת מייצרות ערך עם AI.',
-    'NVIDIA': 'נבידיה ממשיכה להיות הסיפור המרכזי של מהפכת ה-AI, אך השאלה עוברת מ"האם יש צמיחה" ל"כמה מהצמיחה כבר מתומחרת". אסטרטגיה של חשיפה מדורגת עשויה להתאים יותר מכניסה בבת אחת.',
-    'MARKET': 'השוק מציג דינמיקה מורכבת עם כוחות מנוגדים. הגישה המומלצת היא לשמור על חשיפה מנייתית עם דגש על איכות — חברות עם מאזן חזק, תזרים חיובי ויתרון תחרותי ברור.',
-    'CRYPTO': 'שוק הקריפטו ממשיך להתבגר עם כניסת גופים מוסדיים ורגולציה מתגבשת. עדיין קיימים סיכונים משמעותיים והתנודתיות נשארת גבוהה.',
-    'FED': 'מדיניות הפד נשארת הגורם הדומיננטי בתמחור נכסים. משקיעים חכמים מתכוננים למספר תרחישים במקום להמר על כיוון אחד.',
-    'TESLA': 'טסלה נשארת מקוטבת. הערך נגזר לא רק מרכב חשמלי אלא גם מ-AI, רובוטיקה ואנרגיה. מי שמשקיע צריך להיות מוכן לתנודתיות גבוהה.',
-    'CORRECTION': 'תיקון בשוק הוא תהליך טבעי. ההיסטוריה מלמדת שרוב התיקונים הם הזדמנויות קנייה, אך יש להבחין בין תיקון טכני לתחילת שוק דובי.',
-    'OPPORTUNITY': 'הזדמנויות אמיתיות מופיעות כשהשוק מגזים בתגובתו. ניתוח פונדמנטלי עמוק, סבלנות ומשמעת מבדילים בין הזדמנות אמיתית ל"סכין נופל".',
-    'RECESSION': 'ההיסטוריה מלמדת שמיתונות נמשכות 10-18 חודשים והשוק מתחיל להתאושש הרבה לפני הכלכלה הריאלית. מי שמוכן מראש יכול להפוך תקופה קשה להזדמנות.',
-    'GEOPOLITICS': 'אירועים גיאופוליטיים מייצרים לרוב שוק הזדמנויות. ההשפעה על השווקים היא לרוב קצרת טווח. פיזור גיאוגרפי וחשיפה לסחורות אסטרטגיות הם כלים מרכזיים.',
-    'ENERGY': 'סקטור האנרגיה עובר טרנספורמציה היסטורית. המעבר לאנרגיה נקייה לא יקרה בן לילה, מה שמשאיר מקום לרווחיות בחברות מסורתיות. חשיפה מאוזנת מומלצת.',
-    'COMMODITIES': 'שוק הסחורות הוא ברומטר לכיוון הכלכלה הגלובלית. חשיפה מגוונת יכולה לשפר את יחס הסיכוי-סיכון ולספק הגנה מפני אינפלציה.',
-    'BONDS': 'שוק האג"ח חזר להיות רלוונטי עם תשואות שמציעות תגמול הולם. סולם אג"ח הוא אסטרטגיה מוצלחת לסביבת ריבית לא ודאית.',
-    'DIVIDEND': 'אסטרטגיית דיבידנדים מציעה שילוב ייחודי של הכנסה שוטפת וצמיחת הון. המפתח הוא לחפש חברות עם יכולת בת-קיימא לשלם ולהגדיל דיבידנדים.',
-    'VOLATILITY': 'תנודתיות גבוהה היא כלי אם יודעים להשתמש בו. ניהול סיכונים הופך לקריטי — הקטנת פוזיציות, סטופים ונזילות הם חובה.',
-    'EARNINGS': 'עונת הדוחות היא המבחן האמיתי. חשוב להתמקד לא רק במספרים אלא גם בהנחיות הנהלה ובטון הכללי של שיחת הוועידה.',
-    'APPLE': 'אפל ממשיכה להיות עמוד תווך. צמיחת מגזר השירותים והמרווחים הגבוהים הופכים אותה לסיפור של הכנסות חוזרות. המכפיל הגבוה מחייב המשך ביצוע חזק.',
-    'REALESTATE': 'שוק הנדל"ן מציג פיצול — לוגיסטיקה ודאטה סנטרים פורחים, משרדים מתמודדים, מגורים חסינים יחסית. REITs מאפשרים גישה נזילה ומגוונת.'
-  }
+  tldr: [
+    'הסנטימנט בשוק משתנה מהר — ה-positioning של המוסדיים מצביע על סיבוב סקטוריאלי. ה-risk/reward בנקודה הנוכחית דורש סלקטיביות גבוהה ותשומת לב לקטליזטורים קרובים.',
+    'אנחנו רואים divergence ברור בין הנרטיב לבין הנתונים. ה-breadth של השוק מצטמצם, מה שמחייב הקטנת חשיפה לשמות ספקולטיביים והגדלת אחזקות quality.',
+    'המאקרו מכתיב את הכיוון — ריבית, אינפלציה ותעסוקה הם המשתנים. כל נתון שחורג מהציפיות ב-2 סטיות תקן מייצר הזדמנות tactical.',
+    'הפער בין implied vol ל-realized vol מגלם תרחיש חמור מדי. יש כאן הזדמנות למכירת פרמיה ולבניית פוזיציות לונג עם convexity.',
+    'ה-carry trade נמצא תחת לחץ. ההשלכות חוצות asset classes — מ-FX דרך credit ועד equities. נדרש rebalance של חשיפות.'
+  ],
+  insights: [
+    'ה-breadth של השוק (% מניות מעל MA200) הוא האינדיקטור המוביל — ירידה מתחת ל-50% היא red flag',
+    'Fund flows מראים מעבר מ-growth ל-value — המומנטום הזה נמשך בממוצע 3-6 חודשים',
+    'ה-VIX term structure ב-contango = סביבה נורמלית. מעבר ל-backwardation = סיגנל alarm',
+    'Earnings revisions הם ה-leading indicator הטוב ביותר — 3 חודשים לפני המחיר',
+    'ה-credit spread (HY-IG) מתרחב = risk-off mode. מתחת ל-300bp = complacency',
+    'Insider buying aggregated > $500M/month = bullish signal היסטורי עם win rate של 73%',
+    'ה-put/call ratio מעל 1.2 = pessimism קיצוני = contrarian buy signal',
+    'ה-yield curve (2Y-10Y) הפוכה > 6 חודשים — כל steepening חד הוא recession alarm'
+  ],
+  howToApply: [
+    'הקצו 60% לאחזקות core (SPY/QQQ), 25% tactical, 15% מזומן/אג"ח קצר',
+    'הגדירו risk budget: מקסימום 2% הפסד על כל פוזיציה בודדת, 6% על הפורטפוליו בשבוע',
+    'השתמשו ב-trailing stops של 8-12% על אחזקות momentum, 15-20% על value',
+    'בנו barbell: 40% defensive quality + 40% high-conviction growth + 20% optionality',
+    'סקרו את הפורטפוליו כל שבוע — factor exposure, sector concentration, beta',
+    'הגדירו trigger levels מראש: VIX>25 = הקטנת exposure ב-20%, VIX>35 = תחילת accumulation',
+    'השתמשו ב-put spreads על SPY כביטוח — עלות של ~1% רבעונית על הגנה של 10%',
+    'שמרו על journal של כל trade עם thesis, catalyst, target ו-stop'
+  ],
+  tools: [
+    'Factor Analysis: momentum, value, quality, size — עקבו אחרי איזה factor מוביל',
+    'Options Flow: unusual activity ב-calls/puts מגלה positioning מוסדי',
+    'Credit Markets: CDX IG/HY spreads כ-leading indicator ל-equities',
+    'Macro Dashboard: PMI, CPI, NFP, JOLTS — event calendar שבועי',
+    'Positioning Data: COT report, AAII sentiment, put/call ratio',
+    'Flow Analysis: ETF inflows/outflows, dark pool activity, 13F filings',
+    'Technical: RSI divergences, volume profile, market structure breaks',
+    'Volatility Surface: skew, term structure, realized vs implied'
+  ],
+  analysis: [
+    'הפורטפוליו צריך להיות מותאם לסביבת המאקרו הנוכחית. ריבית ריאלית חיובית מעדיפה quality ו-FCF generators על פני growth specs. ה-risk premium באג"ח מתחרה ברצינות במניות — תשואה של 4.5%+ על UST 10Y היא threshold שמכריח אלוקציה מחדש. המפתח: לזהות את ה-inflection points לפני שהשוק מתמחר אותם.',
+    'ה-positioning הנוכחי של institutional funds מראה crowding ב-mega-cap tech. הסיכון: כל rebalancing מאולץ (margin calls, redemptions) ייצור cascading selling. הפתרון: פיזור real דרך uncorrelated assets — commodities, international small-caps, ו-volatility strategies.',
+    'אנחנו בשלב מאוחר של המחזור הכלכלי. ההיסטוריה מלמדת שהתשואות הגבוהות ביותר מגיעות דווקא ב-12 החודשים האחרונים לפני שיא — אבל גם הסיכון הגבוה ביותר. ה-asymmetry הופכת מחיובית לשלילית. הגדילו hedges בהדרגה.',
+    'ה-regime shift מ-ZIRP ל-positive real rates שינה את ה-playbook. מודלים שעבדו 2010-2021 לא רלוונטיים. FCF yield, ROIC, ו-debt/EBITDA חוזרים להיות ה-metrics שמשנים. חברות zombie עם leverage גבוה הן ה-short הברור.',
+    'הפער בין ה-VIX (implied) ל-realized vol מצביע על complacency. זה לא אומר "sell everything" — זה אומר שה-premium על הגנה זול. קנו puts OTM על SPY, שלמו 0.5% על הגנה של 15%. ה-convexity שווה את המחיר.'
+  ]
 };
 
-// English templates
+// ——— English templates — hedge fund morning note style ———
 var ENG = {
-  tldr: {
-    'AI': 'Major AI developments are reshaping the investment landscape with both challenges and opportunities. Selectivity is key.',
-    'NVIDIA': 'NVIDIA leads the AI chip revolution with unprecedented demand. The question is how much growth is already priced in.',
-    'MARKET': 'Markets stand at a pivotal point with multiple macro forces at play. Key trends demand close attention.',
-    'CRYPTO': 'Crypto markets show significant volatility amid regulatory and macro shifts. Institutional demand grows but risks remain.',
-    'FED': 'Fed policy directly impacts all capital markets. Upcoming decisions will set the direction for months ahead.',
-    'TESLA': 'Tesla remains polarizing — between innovation and operational challenges, it presents an interesting investor dilemma.',
-    'CORRECTION': 'Market correction raises directional questions. History shows corrections can be opportunities, but caution is needed.',
-    'OPPORTUNITY': 'Interesting investment opportunities emerge in current conditions. Smart filtering reveals attractive risk-reward positions.',
-    'EARNINGS': 'Earnings season reveals the real state behind headlines. Expectation gaps create significant opportunities.',
-    'RECESSION': 'Economic indicators raise slowdown concerns. Early preparation is the key to navigating such periods.',
-    'GEOPOLITICS': 'Geopolitical tensions add uncertainty layers. Investors must consider multiple scenarios in strategy building.',
-    'ENERGY': 'Energy markets at an inflection point with structural supply-demand shifts. Implications extend far beyond the sector.',
-    'COMMODITIES': 'Commodity trends reflect broad macro shifts. Understanding dynamics is essential for diversified portfolios.',
-    'BONDS': 'Bond markets signal important economic expectations. Current yields present a serious equity alternative.',
-    'DIVIDEND': 'Dividend strategies return to the spotlight. Proper selection can deliver stable income and growth.',
-    'VOLATILITY': 'Current volatility levels require strategy adjustments. Risk management becomes the decisive factor.',
-    'APPLE': 'Apple remains a portfolio cornerstone. Recent developments raise interesting directional questions.',
-    'REALESTATE': 'Real estate shows complex dynamics with rate and demand changes affecting both physical and traded markets.'
+  tldr: [
+    'Market sentiment shifting — institutional positioning suggests sector rotation underway. Risk/reward at current levels demands selectivity and attention to near-term catalysts.',
+    'Clear divergence between narrative and data. Breadth narrowing, requiring reduced speculative exposure and increased quality allocation.',
+    'Macro dictating direction — rates, inflation, employment are the variables. Any 2-sigma surprise creates tactical opportunity.',
+    'Gap between implied and realized vol overstates downside risk. Opportunity for premium selling and building long positions with convexity.',
+    'Carry trade under pressure. Cross-asset implications from FX through credit to equities. Portfolio rebalancing required.'
+  ],
+  insights: [
+    'Market breadth (% stocks above MA200) is the leading indicator — drop below 50% is a red flag',
+    'Fund flows showing growth-to-value rotation — this momentum typically persists 3-6 months',
+    'VIX term structure in contango = normal. Shift to backwardation = alarm signal',
+    'Earnings revisions are the best leading indicator — 3 months ahead of price',
+    'Credit spread (HY-IG) widening = risk-off mode. Below 300bp = complacency',
+    'Aggregated insider buying > $500M/month = historically bullish with 73% win rate',
+    'Put/call ratio above 1.2 = extreme pessimism = contrarian buy signal',
+    'Yield curve (2Y-10Y) inverted > 6 months — any sharp steepening is a recession alarm'
+  ],
+  howToApply: [
+    'Allocate 60% core (SPY/QQQ), 25% tactical, 15% cash/short-duration bonds',
+    'Set risk budget: max 2% loss per position, 6% portfolio drawdown per week',
+    'Use 8-12% trailing stops on momentum names, 15-20% on value positions',
+    'Build barbell: 40% defensive quality + 40% high-conviction growth + 20% optionality',
+    'Weekly portfolio review: factor exposure, sector concentration, portfolio beta',
+    'Pre-set trigger levels: VIX>25 = reduce exposure 20%, VIX>35 = begin accumulation',
+    'Use SPY put spreads as insurance — ~1% quarterly cost for 10% downside protection',
+    'Maintain trade journal with thesis, catalyst, target price, and stop-loss for every position'
+  ],
+  tools: [
+    'Factor Analysis: track which factors (momentum/value/quality/size) are leading',
+    'Options Flow: unusual call/put activity reveals institutional positioning',
+    'Credit Markets: CDX IG/HY spreads as leading equity indicators',
+    'Macro Dashboard: PMI, CPI, NFP, JOLTS — weekly event calendar',
+    'Positioning Data: COT report, AAII sentiment, put/call ratio',
+    'Flow Analysis: ETF inflows/outflows, dark pool activity, 13F filings',
+    'Technical: RSI divergences, volume profile, market structure breaks',
+    'Volatility Surface: skew, term structure, realized vs implied analysis'
+  ],
+  analysis: [
+    'Portfolio must align with current macro regime. Positive real rates favor quality and FCF generators over growth specs. Bond risk premium competing seriously with equities — 4.5%+ UST 10Y yield forces reallocation. Key: identify inflection points before the market prices them in.',
+    'Current institutional positioning shows crowding in mega-cap tech. Risk: forced rebalancing (margin calls, redemptions) creates cascading selling. Solution: real diversification via uncorrelated assets — commodities, international small-caps, volatility strategies.',
+    'Late-cycle dynamics at play. History shows highest returns come in the final 12 months before peak — but also highest risk. Asymmetry shifting from positive to negative. Gradually increase hedges.',
+    'Regime shift from ZIRP to positive real rates has changed the playbook. Models from 2010-2021 no longer apply. FCF yield, ROIC, and debt/EBITDA are back as decisive metrics. Zombie companies with high leverage are the obvious short.',
+    'Gap between VIX (implied) and realized vol signals complacency. This does not mean sell everything — it means protection is cheap. Buy OTM SPY puts, pay 0.5% for 15% downside protection. The convexity is worth the price.'
+  ]
+};
+
+// ——— Topic-specific deep analysis (5 variations × 3 points each) ———
+var TOPIC_DEEP = {
+  'AI': {
+    heb: [
+      ['מחזור ה-CAPEX של AI מאיץ — $150B+ בהשקעות שנתיות מ-Big Tech. עקבו אחרי ה-incremental ROIC','ה-picks-and-shovels play (NVDA, AVGO, TSMC) עדיף על application layer — visibility גבוהה יותר','חפשו חברות עם gross margin > 60% וצמיחת הכנסות > 30% — ה-sweet spot של AI שלב 2'],
+      ['ה-hyperscalers מגדילים CAPEX ב-40%+ YoY — bullish ל-infra, questionable ל-ROI שלהם','שרשרת הערך: Foundry > Design > Networking > Software. הרווחיות עוברת משבבים לתוכנה','ה-AI revenue של cloud providers צומח >100% — אבל ה-base עדיין קטן יחסית לציפיות'],
+      ['ה-concentration risk ב-AI בולט: 5 חברות = 70% מה-market cap של הסקטור','Custom silicon (Google TPU, Amazon Graviton) מאיימים על ה-moat של NVIDIA','ה-TAM של AI software צפוי להגיע ל-$300B עד 2027 — אבל ה-winners עדיין לא ברורים'],
+      ['Inference > Training כ-revenue driver ב-2025+. חברות שמייעלות inference costs הן ה-play הבא','ה-margin expansion של AI-enabled SaaS (30% > 45% operating margin) הוא ה-thesis המרכזי','Regulation incoming — EU AI Act בתוקף, US בדרך. compliance infrastructure = יתרון'],
+      ['ה-AI PC/phone cycle רק מתחיל — שדרוג של 1.5B מכשירים ב-3 שנים','Open-source models מורידים את ה-moat של closed models — implications על MSFT/GOOGL','Edge AI infrastructure = ה-dark horse. LSCC, MRVL, ANET בונות את ה-pipes']
+    ],
+    eng: [
+      ['AI CAPEX cycle accelerating — $150B+ annual investment from Big Tech. Track incremental ROIC','Picks-and-shovels (NVDA, AVGO, TSMC) preferred over application layer — higher earnings visibility','Target gross margin >60% and revenue growth >30% — AI Phase 2 sweet spot'],
+      ['Hyperscalers increasing CAPEX 40%+ YoY — bullish for infra, questionable for their ROI','Value chain shifting: Foundry > Design > Networking > Software. Profits migrating to software','Cloud AI revenue growing >100% — but base still small relative to multiple expectations'],
+      ['AI concentration risk: 5 companies = 70% of sector market cap. Single name drags all','Custom silicon threatening NVIDIA moat — watch benchmark results','AI software TAM projected $300B by 2027 — but winners still unclear'],
+      ['Inference > Training as revenue driver 2025+. Companies optimizing inference costs are next','AI-enabled SaaS margin expansion (30% to 45% operating margin) is central thesis','Regulation incoming — EU AI Act in effect, US coming. Compliance infrastructure = advantage'],
+      ['AI PC/phone cycle starting — 1.5B device refresh in 3 years. QCOM, ARM, INTC benefit','Open-source models eroding closed model moat — MSFT/GOOGL monetization implications','Edge AI infrastructure is the dark horse. LSCC, MRVL, ANET building the pipes']
+    ]
   },
-  insights: {
-    'AI': ['The AI race is accelerating — laggards risk irrelevance', 'Investments shifting from hype to proven ROI execution', 'Tightening regulation favors companies with existing infrastructure'],
-    'NVIDIA': ['AI chip demand exceeds supply, supporting sustained growth', 'Competition intensifies but the technological moat remains', 'Custom model shift expands total addressable market'],
-    'MARKET': ['Conflicting factors create a complex momentum environment', 'Defensive sectors show relative strength signaling caution', 'Macro data points to asset allocation adjustments needed'],
-    'CRYPTO': ['Institutional adoption creates new price floors', 'Regulation evolving from resistance to framework', 'Traditional market correlation indicates growing maturity'],
-    'FED': ['Rate expectations affect pricing before decisions', 'Market-Fed expectation gap creates two-way risk', 'Extended restriction may create beaten-down asset opportunities'],
-    'TESLA': ['Innovation leadership faces growing competitive pressure', 'EV market shifting from volume growth to profitability', 'Business diversification expands growth potential'],
-    'CORRECTION': ['10-15% corrections are natural healthy market cycles', 'Negative sentiment often creates best long-term opportunities', 'Key is distinguishing technical corrections from trend changes'],
-    'OPPORTUNITY': ['Opportunities emerge from perception-reality gaps', 'Over-punished sectors offer the best fundamental value', 'Disciplined non-emotional approach identifies real opportunities'],
-    'EARNINGS': ['Estimate-actual gaps drive sharp price moves', 'Forward guidance matters as much as quarterly results', 'Margin trends are the best leading indicator'],
-    'RECESSION': ['Slowdown signs appear months before official recession', 'Different sectors react differently — winners exist in downturns', 'Portfolio liquidity and flexibility are key navigational tools'],
-    'GEOPOLITICS': ['Geopolitical risks tend to have temporary market impact', 'Supply chains reorganizing creates new winners and losers', 'Geographic diversification becomes increasingly important'],
-    'ENERGY': ['Clean transition still drives traditional energy demand', 'Energy prices feed into inflation and monetary policy', 'Companies with credible transition plans earn market premiums'],
-    'COMMODITIES': ['Commodity prices serve as leading global economy indicators', 'Supply imbalances create cyclical opportunities', 'Dollar remains the key pricing factor for commodities'],
-    'BONDS': ['Yield curve sends important growth expectation signals', 'Current yields make bonds an attractive equity alternative', 'Duration is a central risk component to manage carefully'],
-    'DIVIDEND': ['Consistent dividend growers tend to outperform', 'Dividend plus growth provides optimal long-term balance', 'Payout ratio sustainability matters more than yield height'],
-    'VOLATILITY': ['High volatility is a double-edged sword', 'Position sizing matters more than direction in volatile markets', 'Hedging instruments become essential tools'],
-    'APPLE': ['Ecosystem loyalty translates to recurring revenue', 'AI and services shift diversifies revenue sources', 'High valuation demands continued innovation'],
-    'REALESTATE': ['Rate changes affect real estate pricing with 6-12 month lag', 'Remote work permanently changed office demand', 'Residential remains resilient due to structural undersupply']
+  'NVIDIA': {
+    heb: [
+      ['NVDA ב-Forward PE ~30x על צמיחה של 50%+. PEG < 1 = עדיין reasonable','Data center = 80%+ מההכנסות. כל cloud CAPEX slowdown הוא existential risk','Blackwell ramp הוא ה-catalyst הקרוב — watch: supply chain lead times, ASP trends'],
+      ['Gross margin (75%+) חריגה. כל ירידה של 100bp = 3-4% hit ל-EPS','תחרות: AMD MI300X, Intel Gaudi, custom chips. CUDA moat חזק אבל מתכלה','Gaming ו-automotive הם optionality שהשוק מתעלם ממנו'],
+      ['Short interest נמוך היסטורית = אין squeeze fuel, אבל גם אין selling pressure','TSMC capacity allocation = ה-bottleneck האמיתי. עקבו אחרי utilization rates','Networking (Mellanox) צומח 100%+ — InfiniBand ל-AI clusters = growth vector נוסף'],
+      ['EV/EBITDA forward ~35x מגלם perfection. כל guidance cut של 5%+ = ירידה של 15-20%','China restrictions מגבילים ~10% מהרווח — workarounds מפחיתים impact','Sovereign AI = TAM expansion שלא מתומחר'],
+      ['FCF yield ~2.5% = growth stock, לא value. Position sizing: 3-5% מהתיק מקסימום','Buyback program $25B תומך אבל צמיחה היא ה-driver','Options market מתמחר ~8% move ביום דוח — זה ה-risk לקחת בחשבון']
+    ],
+    eng: [
+      ['NVDA at ~30x Forward PE on 50%+ growth. PEG < 1 = still reasonable','Data center = 80%+ of revenue. Any cloud CAPEX slowdown is existential','Blackwell ramp is near-term catalyst — watch supply chain lead times, ASPs'],
+      ['Gross margin (75%+) exceptional. Every 100bp decline = 3-4% EPS hit','Competition: AMD MI300X, Intel Gaudi, custom chips. CUDA moat strong but eroding','Gaming and automotive are undervalued optionality'],
+      ['Short interest historically low = no squeeze fuel, no selling pressure','TSMC capacity allocation is the real bottleneck. Track utilization rates','Networking (Mellanox) growing 100%+ — InfiniBand for AI clusters = growth vector'],
+      ['Forward EV/EBITDA ~35x prices perfection. 5%+ guidance cut = 15-20% decline','China restrictions limit ~10% profit — SE Asia workarounds reduce impact','Sovereign AI = unpriced TAM expansion'],
+      ['FCF yield ~2.5% = growth not value. Max 3-5% of portfolio','$25B buyback supportive but growth is the driver','Options pricing ~8% earnings day move — factor into position sizing']
+    ]
   },
-  howToApply: {
-    'AI': ['Consider diversified AI ETF exposure over single stocks', 'Track major AI company CAPEX as leading indicator', 'Combine technical and fundamental for entry timing'],
-    'NVIDIA': ['Monitor data center orders as demand leading indicator', 'Consider supply chain exposure beyond the stock itself', 'Set clear take-profit levels given high volatility'],
-    'MARKET': ['Ensure proper sector and geographic diversification', 'Maintain liquidity for emerging opportunities', 'Review allocation based on changing macro conditions'],
-    'CRYPTO': ['Limit crypto to a small portfolio percentage', 'Use DCA strategy rather than market timing', 'Diversify across multiple cryptocurrencies'],
-    'FED': ['Avoid impulsive reactions to rate decisions', 'Consider rate impact across all portfolio components', 'Prepare for multiple scenarios with barbell strategy'],
-    'TESLA': ['Define position size in advance', 'Track quarterly delivery numbers as leading indicator', 'Consider options to limit risk while maintaining exposure'],
-    'CORRECTION': ['Prepare shopping lists with clear price targets', 'Enter gradually — never try to catch the bottom', 'Verify portfolio balance across sectors'],
-    'OPPORTUNITY': ['Conduct thorough due diligence before entry', 'Define stop-loss and profit targets upfront', 'Ensure fit with personal risk profile'],
-    'EARNINGS': ['Track analyst expectations pre-earnings', 'Consider reducing ahead of earnings for risk management', 'Focus on forward guidance over quarterly numbers'],
-    'RECESSION': ['Increase defensive sector and strong balance sheet exposure', 'Maintain larger than usual cash reserves', 'Review all positions and set stop levels'],
-    'GEOPOLITICS': ['Avoid drastic moves based solely on news', 'Diversify geographically to reduce exposure', 'Consider commodity exposure as geopolitical hedge'],
-    'ENERGY': ['Balance traditional and clean energy exposure', 'Track oil inventories and OPEC forecasts', 'Consider energy price impact on other holdings'],
-    'COMMODITIES': ['Use commodity ETFs as portfolio hedge component', 'Track commodity price ratios as macro indicators', 'Consider indirect exposure via producer stocks'],
-    'BONDS': ['Adjust average duration to rate expectations', 'Consider bond laddering for rate risk diversification', 'Monitor credit spreads as market risk indicator'],
-    'DIVIDEND': ['Build sectorially diversified dividend portfolio', 'Check dividend stability not just yield height', 'Reinvest dividends for compounding effect'],
-    'VOLATILITY': ['Reduce position sizes in volatile periods', 'Consider options strategies for risk management', 'Avoid decisions on extreme volatility days'],
-    'APPLE': ['Analyze services segment growth as key value driver', 'Track iPhone sales trends as leading indicator', 'Consider Apple as a core holding with calibrated weight'],
-    'REALESTATE': ['Diversify across real estate segments', 'Track occupancy rates and rent growth', 'Consider REITs as a liquid alternative to direct investment']
+  'MARKET': {
+    heb: [
+      ['S&P 500 ב-Forward PE ~21x — מעל ממוצע היסטורי (17x). צמיחת EPS של 10%+ נדרשת להצדקה','Market breadth: רק 35% מעל MA50 = divergence מסוכנת. ראלי צר = fragile','ה-equity risk premium ירד ל-~3.5% — הנמוך ב-20 שנה. אג"ח מתחרות ברצינות'],
+      ['Magnificent 7 = 30% מה-S&P. concentration risk הגבוה ביותר מאז dot-com','נזילות: Fed balance sheet מצטמצם $95B/חודש. פחות נזילות = פחות support למכפילים','Earnings growth deceleration מ-12% ל-7% — השוק עדיין לא מתמחר'],
+      ['Seasonal patterns: חולשה ב-Q3 — sell in May עדיין רלוונטי סטטיסטית','ISM Manufacturing מתחת ל-50 = contraction. שירותים מעל 50 = מה שמחזיק','Consumer spending resilience מפתיע — אבל savings rate ב-all-time low = לא sustainable'],
+      ['Cross-asset: נחושת/זהב ratio יורד = risk-off signal','DXY מעל 105 = headwind ל-multinationals. מתחת ל-100 = tailwind','Fund manager survey: cash 4.5% = neutral. מעל 5% = contrarian buy'],
+      ['Buyback blackout pre-earnings = פחות bid support ב-2-3 שבועות','IPO pipeline מתחמם = late cycle euphoria signal','Correlation בין מניות עולה = macro-driven market. Allocation > stock picking']
+    ],
+    eng: [
+      ['S&P 500 at ~21x Forward PE — above historical avg (17x). 10%+ EPS growth needed','Breadth: only 35% above MA50 = dangerous divergence. Narrow rally = fragile','ERP down to ~3.5% — 20-year low. Bonds competing seriously'],
+      ['Mag 7 = 30% of S&P. Highest concentration since dot-com','Fed balance sheet shrinking $95B/month. Less liquidity = less multiple support','Earnings growth decelerating 12% to 7% — not yet priced'],
+      ['Seasonal: Q3 weakness — sell-in-May remains statistically relevant','ISM Mfg below 50 = contraction. Services above 50 = holding economy','Consumer resilience surprising but savings rate at ATL = not sustainable'],
+      ['Cross-asset: copper/gold declining = risk-off from commodities','DXY above 105 = multinational/EM headwind. Below 100 = tailwind','Fund manager cash at 4.5% = neutral. Above 5% = contrarian buy'],
+      ['Buyback blackout pre-earnings = less bid support 2-3 weeks','IPO pipeline heating = late cycle euphoria signal','Intra-stock correlation rising = macro-driven. Allocation > picking']
+    ]
   },
-  tools: {
-    'AI': ['NLP & machine learning models', 'Real-time sentiment analysis', 'AI value chain mapping', 'Technology adoption metrics'],
-    'NVIDIA': ['Semiconductor cycle analysis', 'TSMC order tracking', 'Sector P/E comparison', 'GPU market share analysis'],
-    'MARKET': ['Multi-timeframe technical analysis', 'VIX and derivatives', 'Put/Call ratio sentiment', 'Sector heat map'],
-    'CRYPTO': ['On-Chain analytics', 'Whale wallet tracking', 'Crypto Fear & Greed Index', 'Cross-coin performance'],
-    'FED': ['Yield curve analysis', 'CME FedWatch Tool', 'Breakeven inflation rates', 'Dot plot analysis'],
-    'TESLA': ['Quarterly delivery data', 'EV market share analysis', 'Operating margin comparison', 'Patent tracking'],
-    'CORRECTION': ['Key support/resistance levels', 'Moving averages (50/200)', 'RSI and momentum', 'Volume analysis'],
-    'OPPORTUNITY': ['Value stock screener', 'Quick DCF analysis', 'Historical P/E comparison', 'Sentiment mapping'],
-    'EARNINGS': ['EPS & Revenue estimates', 'Earnings Whisper Number', 'YoY quarter comparison', 'Guidance analysis'],
-    'RECESSION': ['Manufacturing & Services PMI', 'Weekly jobless claims', 'Leading Economic Index', 'HY vs IG credit spreads'],
-    'GEOPOLITICS': ['Geopolitical risk index', 'Strategic commodity prices', 'Supply chain tracking', 'Geographic exposure analysis'],
-    'ENERGY': ['Weekly EIA oil inventories', 'OPEC+ decision tracking', 'Crack spread analysis', 'Energy consumption trends'],
-    'COMMODITIES': ['Bloomberg Commodity Index', 'Gold-copper ratio', 'Commodity seasonality', 'Contango/Backwardation analysis'],
-    'BONDS': ['Government yield curve', 'Corporate credit spreads', 'Duration & Convexity', 'TIPS inflation expectations'],
-    'DIVIDEND': ['Payout ratio analysis', 'Consecutive raise history', 'Yield vs Growth', 'Free cash flow analysis'],
-    'VOLATILITY': ['VIX term structure', 'Implied vs Realized Vol', 'Historical standard deviation', 'Options skew analysis'],
-    'APPLE': ['Product segment sales', 'Services growth', 'iPhone ASP analysis', 'FAANG multiple comparison'],
-    'REALESTATE': ['Case-Shiller home prices', 'Occupancy by sector', 'Cap Rate Analysis', 'Sector REIT index']
+  'CRYPTO': {
+    heb: [
+      ['BTC ב-correlation 0.6 עם NASDAQ — לא uncorrelated, leveraged tech play','Halving cycle = structural bull case. היסטוריה: 12-18 חודשי bull post-halving','ETF inflows > $500M/week = institutional demand אמיתי. Outflows = watch out'],
+      ['On-chain: Long-term holders (>1yr) = 75%+ supply = tight float = potential squeeze','Stablecoin market cap = crypto liquidity proxy. עלייה = capital entering','Regulatory clarity (ETF, MiCA) מסירה תקרת מכפיל — אבל לא תחתית'],
+      ['DeFi TVL recovery = early signal לחזרת risk appetite בקריפטו','BTC dominance מעל 55% = risk-off. מתחת ל-45% = alt-season','Funding rates שליליים = shorts overextended = potential squeeze'],
+      ['Mining: hash rate ATH + price consolidation = margin pressure על miners','Correlation עם real yields הפוכה — ריבית ריאלית עולה = headwind','Institutional custody (Fidelity, BlackRock) מסירים barriers — adoption מאיץ'],
+      ['Layer 2 scaling מגדיל utility — fundamental value proposition משתפר','NFT collapse = speculation clearing, infrastructure story intact','MicroStrategy premium/discount ל-NAV = proxy לסנטימנט מוסדי כלפי BTC']
+    ],
+    eng: [
+      ['BTC 0.6 correlation with NASDAQ — not uncorrelated, effectively leveraged tech','Halving cycle = structural bull case. History: 12-18 month bull post-halving','ETF inflows >$500M/week = real institutional demand. Outflows = warning'],
+      ['On-chain: LTH holding 75%+ supply = tight float = squeeze potential','Stablecoin market cap = liquidity proxy. Rising = capital entering','Regulatory clarity removes multiple ceiling — not floor'],
+      ['DeFi TVL recovery = early risk appetite signal','BTC dominance >55% = crypto risk-off. <45% = alt-season','Negative funding rates = shorts overextended = squeeze setup'],
+      ['Mining: ATH hash rate + consolidation = miner margin pressure','Inverse correlation with real yields — rising rates = headwind','Institutional custody removing barriers — adoption accelerating'],
+      ['L2 scaling increasing utility — fundamental value improving','NFT collapse = speculation clearing, infra story intact','MSTR premium/discount to NAV = institutional BTC sentiment proxy']
+    ]
   },
-  analysis: {
-    'AI': 'The AI revolution enters a new results-driven phase. Companies showing real ROI will separate from the hype. Focus on margin impact, not just revenue headlines.',
-    'NVIDIA': 'NVIDIA remains central to AI but the question shifts to pricing. Demand is strong but watch for saturation and competition. Gradual exposure may be optimal.',
-    'MARKET': 'Complex dynamics with opposing forces. Maintain equity exposure with quality emphasis — strong balance sheets, positive cash flow, and clear competitive advantages.',
-    'CRYPTO': 'Crypto matures with institutional entry and evolving regulation. Significant risks persist and volatility demands careful risk management.',
-    'FED': 'Fed policy dominates asset pricing. Smart investors prepare for multiple scenarios rather than betting on a single outcome.',
-    'TESLA': 'Tesla remains highly polarized. Value derives from EVs, AI, robotics, and energy. Expect high volatility and define exit scenarios in advance.',
-    'CORRECTION': 'Corrections are natural and often buying opportunities. Distinguish technical corrections from bear market onsets. Act on pre-prepared plans, not panic.',
-    'OPPORTUNITY': 'Real opportunities emerge from market overreaction. Deep analysis, patience, and discipline separate opportunities from falling knives.',
-    'EARNINGS': 'Earnings season is the real market test. Focus on guidance, CFO tone, and conference call context — not just headline numbers.',
-    'RECESSION': 'Recessions average 10-18 months and markets recover well before the real economy. Preparation with balanced portfolios and cash reserves turns challenges into opportunities.',
-    'GEOPOLITICS': 'Geopolitical events create opportunity markets for disciplined investors. Impact is usually short-term. Geographic and commodity diversification are key risk tools.',
-    'ENERGY': 'Energy undergoes historic transformation. Clean transition coexists with traditional profitability. Balanced exposure to both sides is recommended.',
-    'COMMODITIES': 'Commodities serve as a reliable economic barometer. Diversified commodity exposure improves risk-reward and provides inflation protection.',
-    'BONDS': 'Bonds are relevant again with meaningful yields. Build diversified portfolios across duration, credit quality, and issuer type.',
-    'DIVIDEND': 'Dividend investing offers unique income-growth combination. Seek sustainable payers over highest yields.',
-    'VOLATILITY': 'Volatility is a tool if used correctly. Risk management is critical — reduce sizes, set stops, maintain liquidity.',
-    'APPLE': 'Apple remains a pillar. Services growth and high margins tell a recurring revenue story. High multiple demands continued strong execution.',
-    'REALESTATE': 'Real estate shows clear bifurcation — logistics and data centers thrive, offices struggle, residential stays resilient. REITs offer liquid diversified access.'
+  'FED': {
+    heb: [
+      ['Fed Funds futures מתמחרים X cuts ב-12 חודש — כל deviation מזיז equities 2-3%','Core PCE > 3% = no cuts. מתחת ל-2.5% = cuts accelerate','Dot plot dispersion גדלה — אין consensus. Vol סביב meetings גדל'],
+      ['Term premium חוזר — TLT sensitivity עלתה משמעותית','QT ב-$95B/חודש = passive tightening שהשוק מתעלם ממנו','Neutral rate (r*) עלה ל-~3% — higher for longer = base case'],
+      ['Labor: JOLTS/unemployed ratio > 1 = tight. < 0.8 = recession territory','Financial conditions מתרופפים למרות ריבית גבוהה — Fed שומר hawkish bias','Inflation expectations (5Y5Y) 2.3% = anchored. מעל 2.5% = alarm'],
+      ['Reverse repo draining = נזילות חוזרת = short-term positive','Bank reserves declining = potential QT taper discussion','Wage growth (Atlanta Fed) > 5% = sticky inflation = rates stay higher'],
+      ['Fed communication: hawkish hold > dovish cut בהשפעה על השוק','Real fed funds rate ~2.5% = restrictive. Impact ב-lag של 6-12 חודש','Housing affordability ב-worst 40 שנה — Fed aware אבל constrained']
+    ],
+    eng: [
+      ['Fed Funds futures pricing X cuts in 12 months — deviation moves equities 2-3%','Core PCE >3% = no cuts. Below 2.5% = cuts accelerate','Dot plot dispersion widening — no consensus. Meeting vol increasing'],
+      ['Term premium returning — TLT rate sensitivity up significantly','QT at $95B/month = passive tightening market ignores','Neutral rate risen to ~3% — higher for longer is base case'],
+      ['JOLTS/unemployed >1 = tight labor. <0.8 = recession','Financial conditions loosening despite high rates — Fed hawkish bias','5Y5Y breakeven 2.3% = anchored. Above 2.5% = Fed alarm'],
+      ['Reverse repo draining = liquidity returning = short-term positive','Bank reserves declining = QT taper discussion potential','Atlanta Fed wage growth >5% = sticky inflation = higher rates'],
+      ['Fed comms: hawkish hold impacts market more than dovish cut','Real fed funds ~2.5% = restrictive. 6-12 month lag','Housing affordability 40-year worst — Fed aware but constrained']
+    ]
+  },
+  'TESLA': {
+    heb: [
+      ['TSLA ב-Forward PE ~60x — מגלם 25%+ צמיחה שנתית ל-5 שנים','Automotive gross margin (ex-credits) יורד — competition + price cuts','FSD ורובוטקסי = optionality שמצדיקה 50% מה-market cap. בלי זה = overvalued'],
+      ['China: BYD מוכר יותר EVs globally. Market share erosion = structural risk','Energy storage (Megapack) growing 100%+ = underappreciated revenue stream','Cybertruck ramp בעייתי — capex intensive, margin נמוך'],
+      ['Musk attention split (X, SpaceX, xAI) = governance risk שהשוק discounts','Short interest ~3% = positioning balanced','Dojo supercomputer = potential licensing revenue לא מתומחר'],
+      ['EV market growing 25%+ אבל competition intensifying. Legacy OEMs investing $500B+','Regulatory credits = 5-8% מהרווח. Revenue quality נמוכה','Tesla Insurance, Supercharger, AI licensing = sum-of-parts analysis needed'],
+      ['Options IV ~60% = expensive. מכירת premium (iron condors) = אסטרטגיה','Production target 2M units = breakeven on growth narrative. Below = selloff','Institutional ownership ירד מ-45% ל-40% — smart money reducing']
+    ],
+    eng: [
+      ['TSLA at ~60x Forward PE — prices 25%+ annual growth for 5 years','Auto gross margin (ex-credits) declining — competition + price cuts','FSD/robotaxi = optionality justifying 50% of market cap. Without = overvalued'],
+      ['China: BYD selling more EVs globally. Share erosion = structural risk','Energy storage (Megapack) growing 100%+ = underappreciated stream','Cybertruck ramp problematic — capex intensive, low early margins'],
+      ['Musk attention split = governance risk market discounts','Short interest ~3% = balanced positioning','Dojo = potential unpriced licensing revenue'],
+      ['EV market growing 25%+ but competition intensifying. Legacy OEMs $500B+','Reg credits = 5-8% of profit. Low quality revenue','Insurance, Supercharger, AI licensing = sum-of-parts needed'],
+      ['Options IV ~60% = expensive. Iron condors = strategy','2M unit target = narrative breakeven. Below = selloff','Institutional ownership down 45% to 40% — smart money reducing']
+    ]
+  },
+  'CORRECTION': {
+    heb: [
+      ['תיקון 10% קורה 1.1x/שנה. 15% = 0.5x. 20% bear = 0.3x','Average duration: 10% = 4 חודשים, 15% = 7, 20% = 14 חודשים','הכינו רשימת קנייה עם limit orders מראש — ביום הירידה הכנה מנצחת'],
+      ['VIX spike מעל 30 = תיקון mature. מעל 40 = capitulation = תחילת accumulation','Recovery time מ-10% correction = 4 חודשים. Opportunity cost של יציאה גדול','Credit markets lead equities ב-2-4 שבועות. HY spreads יציבים = תיקון טכני'],
+      ['Defensive outperformance > 2 weeks = real risk-off, לא noise','Breadth thrust (>90% up) post-correction = buy signal עם 95% win rate','Fund outflows peak = contrarian buy. Retail last to sell = bottom signal'],
+      ['Margin debt declining = forced selling done. Stabilization = green light','200-day MA = bull/bear line. מתחת > 2 weeks = regime change','Election year corrections נוטים להיות shallower — political put'],
+      ['S&P יורד 5%+ בשבוע: 80% recovery תוך 3 חודשים','Insider buying spikes during corrections = smart money accumulating','Put/call > 1.3 + VIX > 28 = composite buy signal, 82% win rate']
+    ],
+    eng: [
+      ['10% corrections 1.1x/year. 15% = 0.5x. 20% bear = 0.3x','Duration: 10% = 4 months, 15% = 7, 20% = 14 months','Prepare buy lists with limits in advance — preparation wins'],
+      ['VIX >30 = mature correction. >40 = capitulation = begin accumulation','Recovery from 10% = 4 months. Exit opportunity cost is high','Credit leads equities 2-4 weeks. Stable HY spreads = technical correction'],
+      ['Defensive outperformance >2 weeks = real risk-off','Breadth thrust (>90% up) post-correction = 95% win rate buy signal','Fund outflow peak = contrarian buy. Retail last to sell = bottom'],
+      ['Declining margin debt = forced selling done. Stabilization = green light','200-day MA = bull/bear line. Below >2 weeks = regime change','Election year corrections tend shallower — political put effect'],
+      ['S&P down 5%+ in a week: 80% recovery within 3 months','Insider buying spikes = smart money accumulating','Put/call >1.3 + VIX >28 = composite buy, 82% historical win rate']
+    ]
+  },
+  'EARNINGS': {
+    heb: [
+      ['Earnings surprise: beat 5%+ = +3% avg move. Miss = -7% average','Guidance שווה יותר מהמספר הרבעוני. שדרוג guidance = strong buy signal','Margin trajectory > revenue growth בחשיבות. Expanding 200bp = quality'],
+      ['Pre-earnings IV crush: options מאבדות 30-50% value יום אחרי','Whisper numbers לפעמים יותר accurate מ-consensus','Revenue quality: recurring > one-time. SaaS retention >110% = compounding'],
+      ['Earnings call tone: "challenging", "headwinds" = שלילי בין השורות','Estimate revisions 30 יום לפני = proxy ל-surprise direction','Buyback announcements post-earnings = management confidence'],
+      ['70%+ של סקטור beats = secular tailwind, לא רק execution','Q/Q sequential growth חשוב יותר מ-Y/Y בשלבי inflection','Conference call Q&A > prepared remarks בתוכן אינפורמטיבי'],
+      ['Post-earnings drift: beats ממשיכים לעלות 3-4 שבועות. ה-edge קיים','Options straddle מתמחר X%. Actual < X% = vol sellers מרוויחים','Watch: inventory build, DSO increase, capex cuts = leading trouble']
+    ],
+    eng: [
+      ['Earnings surprise: 5%+ beat = +3% avg move. Miss = -7%','Forward guidance worth more than quarterly number. Raise = strong buy','Margin trajectory > revenue growth. Expanding 200bp = quality signal'],
+      ['Pre-earnings IV crush: options lose 30-50% value next day','Whisper numbers sometimes more accurate than consensus','Revenue quality: recurring > one-time. SaaS retention >110% = compounder'],
+      ['Call tone: "challenging", "headwinds" = negative between lines','Estimate revisions 30 days before = surprise direction proxy','Post-earnings buyback = management confidence signal'],
+      ['70%+ sector beating = secular tailwind not just execution','Q/Q sequential > Y/Y at inflection points','Q&A section > prepared remarks for real information'],
+      ['Post-earnings drift persists 3-4 weeks. Edge still exists','Straddle prices X% move. Actual < X% = vol sellers win','Watch: inventory build, DSO increase, capex cuts = trouble']
+    ]
+  },
+  'OPPORTUNITY': {
+    heb: [
+      ['Best opportunities ב-extreme pessimism (AAII bears > 50%)','חפשו torpedo stocks — quality שנפלו 30%+ על one-time event','Margin of safety: קנו ב-30%+ discount ל-intrinsic value'],
+      ['Contrarian screen: 3+ downgrades ב-90 יום + insider buying = reversal','Mean reversion: סקטורים ב->20% underperformance ב-12 חודש נוטים להתאושש','Special situations: spinoffs, mergers = ה-inefficiency הגדולה ביותר'],
+      ['FCF yield > 8% + revenue growth > 5% + debt/EBITDA < 2x = sweet spot','Altman Z > 3 = safe. 1.8-3 = grey zone. < 1.8 = distress','Sum-of-parts: conglomerates ב->20% discount = activism target'],
+      ['Insider purchase/sale ratio > 2 = confident. < 0.5 = warning','Catalyst calendar: earnings, analyst days, launches, regulatory decisions','52-week lows expanding + index flat = opportunities building under surface'],
+      ['Short interest > 20% + improving fundamentals = squeeze setup','Institutional ownership trend: accumulation by quality funds = validation','Buffett indicator: market cap/GDP > 150% = expensive. < 100% = opportunity']
+    ],
+    eng: [
+      ['Best opportunities at extreme pessimism (AAII bears >50%)','Target torpedo stocks — quality down 30%+ on one-time event','Margin of safety: buy at 30%+ discount to intrinsic value'],
+      ['Contrarian: 3+ downgrades in 90 days + insider buying = reversal','Mean reversion: >20% underperformance in 12 months tends to recover','Special situations: spinoffs, mergers = biggest market inefficiency'],
+      ['FCF yield >8% + revenue growth >5% + debt/EBITDA <2x = sweet spot','Z-score >3 = safe. 1.8-3 = grey. <1.8 = distress risk','Sum-of-parts: conglomerates at >20% discount = activism target'],
+      ['Insider buy/sell ratio >2 = confident. <0.5 = warning','Catalyst calendar: earnings, analyst days, launches, regulatory','52-week lows expanding + flat index = opportunities building'],
+      ['Short interest >20% + improving fundamentals = squeeze setup','Institutional accumulation by quality funds = validation','Buffett indicator: cap/GDP >150% = expensive. <100% = opportunity']
+    ]
+  },
+  'RECESSION': {
+    heb: [
+      ['Leading combo: yield curve inversion + ISM < 47 + claims rising > 20% = imminent','Sahm Rule: unemployment rises 0.5%+ from 12-month low = started','S&P יורד 25-35% ב-recession. 60% מהירידה לפני ה-official call'],
+      ['Defensive portfolio: 40% utilities/healthcare/staples + 30% bonds + 20% cash + 10% gold','Corporate margin cycle: peak margins precede recession 12-18 months','Labor hoarding ending = layoffs accelerating = consumer cliff ahead'],
+      ['Credit cycle leads economy 6-9 months. Lending standards tightening = alarm','Housing starts declining > 20% YoY = GDP multiplier effect','Inventory destocking creates revenue cliff for industrials'],
+      ['Recession playbook: accumulate quality in second half of drawdown','Average recession = 11 months. Markets bottom ~5 months before end','Small caps underperform 15-20% in recessions — avoid IWM, favor SPY'],
+      ['Fed pivot tightening to easing = last leg down historically, not bottom','Corporate defaults spike 6-12 months in — avoid HY credit','Cash king for 6 months, then deploy aggressively into quality at distressed prices']
+    ],
+    eng: [
+      ['Leading combo: curve inversion + ISM <47 + claims >20% = imminent','Sahm Rule: unemployment up 0.5%+ from low = recession started','S&P drops 25-35% in recession. 60% before official call'],
+      ['Defensive: 40% utes/HC/staples + 30% bonds + 20% cash + 10% gold','Margin cycle: peak margins precede recession 12-18 months','Labor hoarding ending = layoffs = consumer spending cliff'],
+      ['Credit cycle leads 6-9 months. Tightening standards = alarm','Housing starts -20% YoY = GDP multiplier','Inventory destocking = industrial revenue cliff'],
+      ['Playbook: accumulate quality in second half of drawdown','Avg recession 11 months. Market bottoms ~5 months before end','Small caps -15-20% in recessions. Avoid IWM, favor SPY'],
+      ['Fed pivot = historically last leg down, not bottom','Defaults spike 6-12 months in — avoid HY','Cash king 6 months then deploy into quality at distress']
+    ]
+  },
+  'GEOPOLITICS': {
+    heb: [
+      ['אירועים גיאופוליטיים מורידים 5-7%, recovery תוך 30-60 יום ב-85% מהמקרים','Safe haven: USD + gold + UST = trio קלאסי. JPY כבר לא reliable','Supply chain: disruption ב-Strait of Hormuz = oil +20%, equities -8%'],
+      ['Defense stocks (LMT, RTX, NOC) = hedge טבעי. P/E עולה 2-3x במתח','Semiconductor supply via Taiwan = ה-black swan. TSMC disruption = global crisis','סנקציות = commodity spikes. Russia/Iran = energy, China = rare earths'],
+      ['Geopolitical risk premium ב-oil = $5-10/barrel. נעלם כש-tension drops','Trade wars: tariffs 10%+ reduce GDP 0.3-0.5% — margin compression','Cyber warfare = underpriced risk. PANW, CRWD as hedge'],
+      ['Election uncertainty: VIX +20% ב-3 חודשים pre-election','EM currencies first casualty. USD strength = EM equity headwind','NATO spending 2% GDP = structural tailwind לביטחון אירופי'],
+      ['Food security: wheat/corn spikes = EM destabilization','Peace dividend: tensions ease = cyclicals rally 2x faster','Nuclear escalation priced near-zero — rethink = extreme reaction']
+    ],
+    eng: [
+      ['Geopolitical events drop markets 5-7%, recovery in 30-60 days 85% of time','Safe haven: USD + gold + UST = classic trio. JPY unreliable','Supply chain: Hormuz disruption = oil +20%, equities -8%'],
+      ['Defense (LMT, RTX, NOC) = natural hedge. P/E expands 2-3x in tensions','Taiwan semiconductor chain = real black swan. TSMC disruption = crisis','Sanctions = commodity spikes. Russia/Iran = energy, China = rare earths'],
+      ['Oil geopolitical premium = $5-10/bbl. Disappears when tension drops','Trade wars: 10%+ tariffs = GDP -0.3-0.5%. Margin compression','Cyber escalation = underpriced risk. PANW, CRWD as hedge'],
+      ['Election: VIX +20% in 3 months pre-election','EM currencies first casualty. USD strength = EM headwind','NATO spending 2% GDP = EU defense structural tailwind'],
+      ['Food security: wheat/corn spikes = EM destabilization','Peace dividend: tensions ease = cyclicals rally 2x vs defensives','Nuclear priced near-zero — any rethink = extreme reaction']
+    ]
+  },
+  'ENERGY': {
+    heb: [
+      ['US shale breakeven = $55-65 WTI. מתחת = cuts, מעל = growth','OPEC+ spare capacity 4-5M bpd. שימוש = bullish demand signal','Crack spread = real-time indicator לרווחיות energy companies'],
+      ['LNG demand from Asia growing 8%/yr = structural bull','Energy transition paradox: renewables need more fossil fuels short-term','Oil services (SLB, HAL) = leveraged capex cycle play. 12-18M visibility'],
+      ['SPR ב-lowest since 1983 = less buffer for supply shocks','Carbon credit market growing 30%/yr = new asset class','Nuclear renaissance: SMR technology = clean energy dark horse'],
+      ['Energy as inflation hedge: oil +10% = CPI +0.3% with 3-month lag','OPEC+ compliance < 80% = bearish for prices','Midstream = high yield + inflation protection. EPD, MMP, ET'],
+      ['China demand = 1-2M bpd swing factor','Renewable LCOE declining but storage = bottleneck','US net energy exporter = geopolitical leverage']
+    ],
+    eng: [
+      ['US shale breakeven $55-65 WTI. Below = cuts, above = growth','OPEC+ spare capacity 4-5M bpd. Deployment = bullish demand','Crack spread = real-time profitability indicator'],
+      ['Asia LNG demand growing 8%/yr = structural bull','Transition paradox: renewables need more fossil fuels short-term','Oil services (SLB, HAL) = leveraged capex play. 12-18M visibility'],
+      ['SPR at lowest since 1983 = less supply shock buffer','Carbon credits growing 30%/yr = new asset class','Nuclear SMR tech = clean energy dark horse'],
+      ['Energy inflation hedge: oil +10% = CPI +0.3% with lag','OPEC+ compliance <80% = bearish','Midstream = high yield + inflation protection. EPD, MMP, ET'],
+      ['China demand = 1-2M bpd swing factor','Renewable LCOE declining, storage = bottleneck','US net exporter = geopolitical leverage']
+    ]
+  },
+  'COMMODITIES': {
+    heb: [
+      ['זהב: real yields inversely correlated. TIPS yield < 1% = rally. > 2% = headwind','Copper/gold ratio = global growth proxy. Rising = expansion, falling = contraction','Bloomberg Commodity ב-backwardation = bullish supply'],
+      ['Silver: industrial (solar) + monetary = dual catalyst. Au/Ag > 80 = silver cheap','Lithium collapse = temporary oversupply. 20%+ demand growth = cycle turns','Uranium supply deficit growing. Sprott Physical = pure play'],
+      ['Grains: La Nina/El Nino = major drivers. USDA WASDE = catalyst','Rare earths: China 70% processing. Export restriction = spike','DXY correlation -0.6. Weak dollar = commodity bull'],
+      ['Supercycle thesis: decades underinvestment + transition demand = structural bull','Iron ore: China construction = 60% demand. PMI = leading indicator','Natural gas seasonal: winter Nov-Mar. Buy shoulder seasons'],
+      ['Cocoa, coffee at highs = climate change impact on softs','PGMs: hydrogen economy catalyst. FCX, VALE for base metals','Contango = negative roll yield. Prefer producer equities over futures']
+    ],
+    eng: [
+      ['Gold: inversely correlated with real yields. TIPS <1% = rally. >2% = headwind','Copper/gold = growth proxy. Rising = expansion, falling = contraction','Bloomberg Commodity in backwardation = bullish supply'],
+      ['Silver: industrial + monetary = dual catalyst. Au/Ag >80 = cheap','Lithium collapse = temp oversupply. 20%+ demand growth = turn','Uranium deficit growing. Sprott Physical = pure play'],
+      ['Grains: ENSO cycles = major drivers. WASDE = catalyst','Rare earths: China 70% processing. Export restriction = spike','Commodities -0.6 with DXY. Weak dollar = bull'],
+      ['Supercycle: underinvestment + transition demand = structural bull','Iron ore: China construction = 60%. PMI = leading','Nat gas seasonal: winter Nov-Mar. Buy shoulders'],
+      ['Cocoa/coffee at highs = climate on softs','PGMs: hydrogen catalyst. FCX, VALE for base metals','Contango = negative roll. Prefer equities over futures']
+    ]
+  },
+  'BONDS': {
+    heb: [
+      ['UST 10Y > 4.5% = equity competition zone. כל 50bp = ~5% ירידה במכפילים','Duration: כל 1% עלייה = ~7% ירידה ב-TLT. Size accordingly','IG spread ~100bp = tight. HY ~400bp = fair value'],
+      ['Yield curve normalization = rate cuts ahead signal. Bonds rally first','TIPS breakeven > 2.5% = inflation alive. < 2% = deflation fears','Munis: tax-equivalent yield אטרקטיבי ל-high brackets'],
+      ['Duration barbell: 20% short + 20% long = convexity exposure','Corporate maturity wall: $1T+ ב-2025-2026. Refinancing risk ל-BBB-','Bond bid-ask widening = liquidity deterioration = early warning'],
+      ['Floating rate = natural rising rate hedge','EM local currency bonds: 6-8% carry + FX upside','US deficit $2T+/yr = Treasury supply pressure. Watch auction demand'],
+      ['At 4.5%, rates must rise 45bp to lose money on 10Y over 1yr','BBB downgrades to HY = forced selling = fallen angel opportunities','TLT/SPY ratio = risk appetite indicator. Rising = risk-off']
+    ],
+    eng: [
+      ['UST 10Y >4.5% = equity competition. Every 50bp = ~5% multiple decline','Duration: 1% rate rise = ~7% TLT decline. Size accordingly','IG ~100bp = tight. HY ~400bp = fair value'],
+      ['Curve normalization = cuts ahead. Bonds rally first','TIPS breakeven >2.5% = inflation. <2% = deflation fears','Munis tax-equivalent very attractive for high brackets'],
+      ['Duration barbell: 20% short + 20% long = convexity','Corporate wall: $1T+ in 2025-2026. BBB- refinancing risk','Bid-ask widening = liquidity deterioration = warning'],
+      ['Floating rate = natural rate hedge','EM local currency: 6-8% carry + FX upside','$2T+ deficit = supply pressure. Watch bid-to-cover'],
+      ['At 4.5%, need 45bp rise to lose on 10Y over 1yr','BBB to HY downgrades = forced selling = opportunities','TLT/SPY ratio = risk appetite. Rising = risk-off']
+    ]
+  },
+  'DIVIDEND': {
+    heb: [
+      ['Aristocrats outperform 2% annually עם 30% less vol','Payout ratio sweet spot: 40-60% = sustainable. > 80% = cut risk','Dividend yield > FCF yield = red flag. מחלקת יותר ממה שמייצרת'],
+      ['Dividend growth > inflation = real income protection','Ex-dividend: מניה יורדת בגובה הדיבידנד — אין free lunch','SCHD best-in-class. ~3.5% yield + 10% growth = total return'],
+      ['Allocation: 25% utilities, 25% healthcare, 20% staples, 15% financials, 15% REITs','Chowder number (yield + 5yr growth) > 12% = quality grower','Covered calls על dividend stocks = enhanced yield, capped upside'],
+      ['Tax: qualified dividends at 15-20% vs ordinary. Structure accordingly','MLPs: 6-8% yield אבל K-1 + UBTI complexity','Dividend capture sounds good but transaction costs eat the edge'],
+      ['International: European banks 5-7%, Aussie REITs 4-6%. Diversify globally','Yield trap: declining stock + constant dividend = rising yield. בדקו business','DRIP = compound machine. $10K at 4% reinvested = $22K in 20 years']
+    ],
+    eng: [
+      ['Aristocrats outperform 2% annually with 30% less vol','Payout sweet spot: 40-60%. Above 80% = cut risk','Div yield > FCF yield = red flag'],
+      ['Growth > inflation = real income protection','Ex-div: stock drops by dividend — no free lunch','SCHD ~3.5% yield + 10% growth = total return'],
+      ['25% utes, 25% HC, 20% staples, 15% fins, 15% REITs','Chowder number >12% = quality grower','Covered calls = enhanced yield, capped upside'],
+      ['Qualified dividends 15-20% vs ordinary. Structure accordingly','MLPs: 6-8% yield but K-1/UBTI complexity','Capture strategy sounds good, costs eat edge'],
+      ['International: EU banks 5-7%, Aussie REITs 4-6%','Yield trap: declining stock + rising yield = check business','DRIP = compound machine. $10K at 4% = $22K/20yr']
+    ]
+  },
+  'VOLATILITY': {
+    heb: [
+      ['VIX > 30: 90% מהמקרים SPY רווחי תוך 12 חודש','VIX futures: contango = normal. Backwardation = crisis mode','IV > RV ב-30%+ = premium overpriced = sell vol opportunity'],
+      ['VVIX > 130 = stressed about being stressed. Rare but powerful','Skew > 140 = tail risk demand high = big players hedging','Correlation spike > 0.7 = macro panic, stock picking useless'],
+      ['High vol strategies: iron condors, jade lizards = collect premium','Vol regimes: low (<15), normal (15-20), elevated (20-30), crisis (>30)','VIX mean reversion to 15-20 within 30-45 days typically'],
+      ['UVXY/VXX decay 60-80%/yr from contango roll. Never hold long','Selling puts at VIX > 25 on quality = paid to buy at discount','Front-month IV spike = event-driven, normalizes quickly'],
+      ['Portfolio vol target: 12-15% annual. > 20% = reduce risk','VIX + credit spreads both spiking = real crisis. VIX alone = technical','Vol clustering: after 2%+ move, expect 2-3 more volatile days']
+    ],
+    eng: [
+      ['VIX >30: SPY profitable within 12 months 90% of time','VIX futures: contango = normal. Backwardation = crisis','IV >30% above RV = premium overpriced = sell vol'],
+      ['VVIX >130 = stressed about stress. Rare but powerful','Skew >140 = tail demand high = hedging','Correlation >0.7 = macro panic, picking useless'],
+      ['High vol: iron condors, jade lizards = premium collection','Regimes: low (<15), normal (15-20), elevated (20-30), crisis (>30)','VIX reverts to 15-20 in 30-45 days typically'],
+      ['UVXY/VXX lose 60-80%/yr from contango. Never hold','Selling puts at VIX >25 on quality = paid to buy cheap','Front-month spike = event-driven, normalizes'],
+      ['Vol target: 12-15% annual. >20% = reduce','VIX + spreads both spiking = real crisis. VIX alone = technical','Vol clusters: 2%+ move = expect 2-3 more volatile days']
+    ]
+  },
+  'APPLE': {
+    heb: [
+      ['AAPL Forward PE ~28x. Premium: FCF yield ~4% + buyback ~3.5% = ~7.5% total return','Services = 22% revenue, > 35% profit. Gross margin 71% vs products 36%','iPhone super-cycle every 3 years. AI phone = potential 2025 cycle'],
+      ['Installed base > 2B devices = recurring revenue moat בלתי ניתן לשכפול','China risk: 20% revenue. Geopolitical escalation = -10%','Buyback $90B/yr = 4% of cap. Shares declining 3-4%/yr'],
+      ['Wearables + Vision Pro = optionality. V2 = mass market potential','India manufacturing = China de-risking + margin improvement','Apple Intelligence = retention + services upsell. Not revenue driver yet'],
+      ['Antitrust (Epic, EU DMA) = potential 5-10% App Store hit','Net cash > $60B = fortress balance sheet. Ultimate defensive quality','Apple One ARPU growing 10%+ = compounding recurring revenue'],
+      ['Buffett position (~45% Berkshire) = ultimate endorsement','iPhone ASP rising despite flat units = Pro mix shift','Health features = $4T healthcare market entry. Long-term optionality']
+    ],
+    eng: [
+      ['AAPL ~28x Forward PE. FCF yield ~4% + buyback ~3.5% = ~7.5% return','Services = 22% rev but >35% profit. 71% GM vs products 36%','Super-cycle every 3yr. AI phone = potential 2025 cycle'],
+      ['2B+ installed base = irreplicable moat','China 20% revenue. Escalation = -10%','$90B/yr buyback = 4% cap. Shares -3-4%/yr'],
+      ['Wearables + Vision Pro = optionality','India manufacturing = de-risk + margin','Apple Intelligence = retention tool, not revenue yet'],
+      ['Antitrust = 5-10% App Store risk','$60B+ net cash = fortress','Apple One ARPU +10% = compounding'],
+      ['Buffett ~45% of BRK = endorsement','ASP rising on Pro mix shift','Health = $4T market entry']
+    ]
+  },
+  'REALESTATE': {
+    heb: [
+      ['Cap rate < 5% vs 10Y spread = overvalued','Data centers (EQIX, DLR) = AI infrastructure. Demand +30% annually','Office vacancy > 18% = structural oversupply. WFH permanent'],
+      ['Residential: starts vs permits divergence = supply indicator','Industrial/logistics (PLD, STAG) = e-commerce + nearshoring tailwind','REITs correlate -0.5 עם 10Y yield. Rate cuts = REIT rally'],
+      ['NAV discount: public REITs at 10-20% discount = opportunity','Senior housing: Boomers entering = 15-year demographic tailwind','AFFO = true REIT earnings. Payout ratio on AFFO = the metric'],
+      ['Cell towers (AMT, CCI) = 5G + inflation-linked leases. Defensive growth','Sunbelt migration = multi-family demand TX, FL, Carolinas','REIT debt maturity wall 2024-2026: refinancing risk'],
+      ['Medical office = recession-resistant + aging population','Self-storage (PSA, EXR) = high margin, low capex, recession-proof','Hospitality REITs: cyclical but leisure outperforming business']
+    ],
+    eng: [
+      ['Cap rate <5% vs 10Y = overvalued','Data centers (EQIX, DLR) = AI infra. +30% demand','Office vacancy >18% = structural oversupply. WFH permanent'],
+      ['Starts vs permits divergence = supply indicator','Industrial (PLD, STAG) = e-commerce + nearshoring','REITs -0.5 correlation with 10Y. Cuts = rally'],
+      ['Public REITs at 10-20% NAV discount = opportunity','Senior housing: Boomers = 15-year tailwind','AFFO = true earnings. AFFO payout = the metric'],
+      ['Cell towers = 5G + inflation-linked. Defensive growth','Sunbelt migration = multi-family demand','Debt wall 2024-2026 = refinancing risk'],
+      ['Medical office = recession-proof + aging pop','Self-storage = high margin, low capex, recession-resistant','Hospitality: cyclical but leisure > business']
+    ]
   }
 };
 
@@ -999,64 +1179,26 @@ function generateArticle(title) {
     if (tickers.length > 0) {
       keyPoints.push('מוזכרות: ' + tickerNames.join(', ') + ' — ' + (sentiment === 'bullish' ? 'בטון חיובי, רמז להזדמנות קנייה' : sentiment === 'bearish' ? 'בטון שלילי, אזהרה מחשיפה' : 'ללא המלצה חד-משמעית, דורש ניתוח נוסף'));
     }
-    // Topic-specific hedge fund insights (3 variants each, picked by hash)
-    var hfInsights = {
-      'AI': [['ההשקעות ב-AI עוברות מהייפ ל-ROI — חברות שלא מראות תוצאות ייענשו','הכניסה לפוזיציות AI צריכה להיות סלקטיבית, לא דרך סל רחב'],['המירוץ ל-AGI מאיץ את ההוצאות — עקבו אחרי CAPEX של Big Tech כסיגנל','חברות AI עם הכנסות חוזרות (SaaS) עדיפות על חד-פעמיות'],['שרשרת הערך של AI מתרחבת מעבר לשבבים — תוכנה ותשתיות הן הסיפור הבא','חפשו חברות עם moat טכנולוגי, לא רק צמיחה']],
-      'NVIDIA': [['נבידיה בתמחור שמגלם צמיחה אגרסיבית — כל החמצה תייצר ירידה חדה','עקבו אחרי הזמנות Blackwell כאינדיקטור מוביל'],['שוק השבבים מחזורי — גם חברות מצוינות חוות ירידות של 30%+','שקלו חשיפה דרך שרשרת האספקה (TSMC, ASML) כחלופה בסיכון נמוך יותר'],['הביקוש ל-GPU חזק אך המתחרים מתקרבים (AMD, custom chips)','המכפיל Forward PE הוא המדד — לא ההיסטורי']],
-      'MARKET': [['השוק מתומחר ל-perfection — כל הפתעה שלילית תייצר תנודה חדה','שמרו על 15-20% מזומן להזדמנויות'],['רוטציה סקטוריאלית מתרחשת — עקבו אחרי מה שעולה ומה שיורד','חשוב לבדוק breadth — האם העלייה רחבה או ממוקדת'],['המאקרו מכתיב כיוון — ריבית, תעסוקה ואינפלציה הם המשתנים','אל תילחמו במגמה, אבל הכינו תוכנית ליום שהיא מסתיימת']],
-      'CRYPTO': [['ביטקוין כ-store of value מתחזק עם אימוץ מוסדי','הגבילו חשיפה ל-2-5% מהתיק — ההתנהגות עדיין ספקולטיבית'],['רגולציה היא הקטליזטור הבא — חיובי לטווח ארוך','ETF קריפטו מקל על כניסה אבל לא מבטל סיכון'],['המתאם עם נאסד"ק עדיין גבוה — זה לא גידור אמיתי','עקבו אחרי halving cycle ו-on-chain metrics']],
-      'FED': [['שוק הריבית מתמחר את העתיד — לא את ההווה','כל הפתעה ב-dot plot תזיז את כל סוגי הנכסים'],['ריבית גבוהה לאורך זמן מעדיפה חברות עם מזומן ורווח','סקטור הבנקים נהנה, הנדל"ן ומניות צמיחה סובלים'],['הפד מסתכל על Core PCE — זה המדד לעקוב','שינוי בציפיות ריבית הוא trigger לסקירת תיק']],
-      'TESLA': [['טסלה היא לא רק רכב — AI, רובוטיקה, אנרגיה','המניה נסחרת על ציפיות עתידיות — כל עדכון שלילי מכאיב'],['מסירות רבעוניות הן המדד שהשוק מסתכל עליו','המכפיל הגבוה דורש צמיחה עקבית — אין מקום לאכזבות'],['תחרות ב-EV גוברת — BYD בסין, Legacy automakers באירופה','FSD ורובוטקסי הם ה-optionality שמצדיקים את הפרמיה']],
-      'CORRECTION': [['תיקון של 10% הוא נורמלי — קורה בממוצע אחת לשנה','הכינו רשימת קנייה עם מחירי יעד מראש'],['המפתח: האם Earnings עדיין צומחים? אם כן — זו הזדמנות','אל תנסו לתפוס תחתית — כנסו בשלבים (DCA)'],['VIX מעל 25 = פחד בשוק = הזדמנות למשקיעים סבלניים','בדקו שאין לכם ריכוזיות יתר בסקטור שנפגע']],
-      'OPPORTUNITY': [['חפשו פער בין מחיר לערך — שם נמצאות ההזדמנויות','בצעו due diligence: מאזן, תזרים, יתרון תחרותי'],['הזדמנויות אמיתיות מופיעות כשהסנטימנט הכי שלילי','הגדירו thesis ברור ו-exit strategy לפני כניסה'],['לא כל ירידה היא הזדמנות — חפשו catalyst להתאוששות','גודל פוזיציה צריך לשקף את רמת הוודאות שלכם']],
-      'EARNINGS': [['עונת דוחות = תנודתיות — הקטינו פוזיציות לפני דוח','ההנחיות קדימה (guidance) חשובות יותר מהמספר הרבעוני'],['מגמות מרווחי רווח הן האינדיקטור המוביל הטוב ביותר','הפתעות חיוביות בהכנסות > הפתעות חיוביות ב-EPS'],['שימו לב לטון ההנהלה בשיחת הוועידה — לפעמים הטון חשוב מהמספרים','Earnings revisions הם סיגנל חזק — עקבו אחרי שינויי תחזיות אנליסטים']],
-      'RECESSION': [['סימני מיתון מופיעים 6-12 חודש לפני ההכרזה הרשמית','הגדילו חשיפה דפנסיבית: utilities, healthcare, consumer staples'],['השוק מתחיל להתאושש הרבה לפני שהמיתון נגמר','שמרו על נזילות — ההזדמנויות הכי טובות מגיעות בשיא הפחד'],['מיתון לא אומר שהכל יורד — יש מנצחים גם בירידות','עקבו אחרי PMI, תביעות אבטלה, ועקום תשואות']],
-      'GEOPOLITICS': [['אירועים גיאופוליטיים יוצרים שוק panic — לרוב זמני','הגדילו חשיפה לסחורות ודפנסיביים כגידור'],['מלחמות סחר משפיעות על שרשראות אספקה — מפסידים ומנצחים','אל תעשו מהלכים חדים על בסיס כותרות — חכו 48-72 שעות'],['פיזור גיאוגרפי הוא הגידור הטוב ביותר','עקבו אחרי מחירי נפט וזהב כברומטר לסיכון']],
-      'ENERGY': [['אנרגיה היא סקטור מחזורי — קנו בזול, מכרו ביוקר','OPEC+ שולט בהיצע — כל החלטה שלהם מזיזה את השוק'],['המעבר לאנרגיה נקייה ייקח עשרות שנים — אנרגיה מסורתית רלוונטית','חשיפה מאוזנת: XOM/CVX + אנרגיה ירוקה'],['מחירי אנרגיה משפיעים על אינפלציה ובעקיפין על ריבית','מלאי הנפט השבועי הוא מדד מפתח לעקוב']],
-      'COMMODITIES': [['זהב הוא hedge — לא השקעה. 5-10% מהתיק','יחס נחושת-זהב מספר סיפור על הכלכלה הגלובלית'],['סחורות עולות כשהדולר נחלש — עקבו אחרי DXY','עונתיות בסחורות חקלאיות — לא הכל macro'],['סין היא הקונה הגדולה — כלכלת סין = מחירי סחורות','ETF סחורות כרכיב גידור — לא כהשקעת ליבה']],
-      'BONDS': [['תשואות של 4-5% באג"ח ממשלתי = חלופה רצינית למניות','משך חיים (Duration) = סיכון ריבית — התאימו לציפיות'],['אג"ח קונצרני IG נותן פרמיה סבירה בסיכון נמוך','עקום תשואות הפוך = סיגנל מיתון — אבל לא תמיד נכון'],['סולם אג"ח (bond ladder) = ניהול סיכון חכם','מרווחי אשראי HY — ברומטר לסיכון שוק']],
-      'DIVIDEND': [['דיבידנד = אינדיקטור לאיכות — חברות שמחלקות בטוחות בעצמן','עקבו אחרי Dividend Aristocrats — 25+ שנות העלאה רצופה'],['תשואת דיבידנד גבוהה מדי = סיכון — בדקו payout ratio','שילוב דיבידנד + צמיחה (SCHD, VIG) = אופטימלי לטווח ארוך'],['השקיעו מחדש דיבידנדים = ריבית דריבית מואצת','חברות utility ו-REIT = דיבידנד יציב אבל צמיחה מוגבלת']],
-      'VOLATILITY': [['VIX מעל 30 = פחד קיצוני — היסטורית, הזדמנות קנייה','הקטינו גודל פוזיציות ב-50% בתנודתיות גבוהה'],['אל תקבלו החלטות ביום של ירידה של 3%+ — חכו','אסטרטגיית put protection על אחזקות ליבה'],['תנודתיות = premium — מוכרי אופציות מרוויחים','בדקו VIX term structure — contango = נורמלי, backwardation = מפחיד']],
-      'REALESTATE': [['ריבית גבוהה = לחץ על נדל"ן — בפיגור של 6-12 חודש','REITs בדיסקאונט ל-NAV = הזדמנות פוטנציאלית'],['דאטה סנטרים ולוגיסטיקה = סגמנטים חזקים','משרדים עדיין בבעיה — עבודה היברידית זה לא זמני'],['שיעורי תפוסה ו-cap rate הם המדדים — לא רק מחיר','מגורים חסינים יחסית בגלל מחסור מבני בהיצע']]
-    };
-    var topicIns = hfInsights[primary] || hfInsights['MARKET'];
-    var variant = titleHash % topicIns.length;
-    topicIns[variant].forEach(function(p) { keyPoints.push(p); });
+    // Topic-specific deep analysis from TOPIC_DEEP (5 variations × 3 points each)
+    var topicData = TOPIC_DEEP[primary] || TOPIC_DEEP['MARKET'];
+    var variant = titleHash % topicData.heb.length;
+    topicData.heb[variant].forEach(function(p) { keyPoints.push(p); });
     // Add second topic insight if exists
-    if (topics.length > 1 && hfInsights[topics[1]]) {
-      var t2Ins = hfInsights[topics[1]];
-      keyPoints.push(t2Ins[(titleHash + 1) % t2Ins.length][0]);
+    if (topics.length > 1 && TOPIC_DEEP[topics[1]]) {
+      var t2Data = TOPIC_DEEP[topics[1]];
+      keyPoints.push(t2Data.heb[(titleHash + 1) % t2Data.heb.length][0]);
     }
   } else {
     // English key points
     if (tickers.length > 0) {
       keyPoints.push('Mentions: ' + tickerNames.join(', ') + ' — ' + (sentiment === 'bullish' ? 'constructive tone, potential buy signal' : sentiment === 'bearish' ? 'cautious tone, warning on exposure' : 'no clear directional call, needs further analysis'));
     }
-    var eInsights = {
-      'AI': [['AI capex cycle accelerating — follow Big Tech spending as leading indicator','Be selective: companies showing real AI ROI will separate from hype'],['The AI stack is broadening beyond chips to software and infrastructure','Look for recurring revenue AI businesses, not one-time consulting']],
-      'NVIDIA': [['NVDA priced for aggressive growth — any miss triggers sharp selloff','Watch Blackwell orders and data center capex as forward indicators'],['Semicycles are real — even great companies see 30%+ drawdowns','Consider supply chain exposure (TSMC, ASML) as lower-risk alternative']],
-      'MARKET': [['Market priced for perfection — any negative surprise triggers volatility','Maintain 15-20% cash for opportunities'],['Sector rotation happening — track what is leading and lagging','Check market breadth — is the rally broad or concentrated?']],
-      'CRYPTO': [['Bitcoin as store of value strengthening with institutional adoption','Limit allocation to 2-5% — behavior remains speculative'],['Regulation is the next catalyst — long-term positive','Crypto ETFs simplify entry but do not eliminate risk']],
-      'FED': [['Rate market prices the future, not the present','Any dot plot surprise moves all asset classes'],['Higher for longer favors cash-rich profitable companies','Banks benefit, REITs and growth stocks suffer']],
-      'TESLA': [['Tesla is not just autos — AI, robotics, energy optionality','Stock trades on future expectations — any disappointment hurts'],['Quarterly deliveries are the metric the market watches','High multiple demands consistent execution — no room for misses']],
-      'CORRECTION': [['10% corrections are normal — happen roughly once per year','Prepare buy lists with target prices in advance'],['Key question: are earnings still growing? If yes, it is an opportunity','Do not try to catch the bottom — scale in via DCA']],
-      'EARNINGS': [['Earnings season = volatility — consider reducing pre-report','Forward guidance matters more than the quarterly number'],['Margin trends are the best leading indicator for stock direction','Watch management tone in earnings calls — sometimes tone matters more than numbers']],
-      'OPPORTUNITY': [['Look for price-value gaps — that is where opportunities live','Do due diligence: balance sheet, cash flow, competitive moat'],['Real opportunities appear when sentiment is most negative','Define clear thesis and exit strategy before entering']],
-      'RECESSION': [['Recession signals appear 6-12 months before official declaration','Increase defensive exposure: utilities, healthcare, staples'],['Markets recover well before the recession officially ends','Maintain liquidity — best opportunities come at peak fear']],
-      'GEOPOLITICS': [['Geopolitical events create panic selling — usually temporary','Increase commodity and defensive exposure as hedge'],['Trade wars disrupt supply chains — creates winners and losers','Avoid sharp moves on headlines — wait 48-72 hours']],
-      'ENERGY': [['Energy is cyclical — buy cheap, sell expensive','OPEC+ controls supply — every decision moves markets'],['Clean transition takes decades — traditional energy stays relevant','Balanced exposure: majors + green energy']],
-      'COMMODITIES': [['Gold is a hedge, not an investment — 5-10% of portfolio','Copper-gold ratio tells the global economy story'],['Commodities rise when dollar weakens — track DXY','China is the marginal buyer — Chinese economy = commodity prices']],
-      'BONDS': [['4-5% government yields = serious equity alternative','Duration = rate risk — match to your outlook'],['IG corporate bonds offer reasonable premium at low risk','Inverted yield curve = recession signal — but not always right']],
-      'DIVIDEND': [['Dividends signal quality — companies that pay are confident','Follow Dividend Aristocrats — 25+ years of consecutive raises'],['Excessive yield = risk — check payout ratio','Combine dividend + growth (SCHD, VIG) for optimal long-term']],
-      'VOLATILITY': [['VIX above 30 = extreme fear — historically a buying opportunity','Reduce position sizes by 50% in high volatility'],['Do not make decisions on 3%+ down days — wait','Put protection on core holdings as insurance']],
-      'REALESTATE': [['High rates = RE pressure — with 6-12 month lag','REITs at NAV discount = potential opportunity'],['Data centers and logistics = strong segments','Offices still challenged — hybrid work is permanent']]
-    };
-    var eTopicIns = eInsights[primary] || eInsights['MARKET'];
-    var eVar = titleHash % eTopicIns.length;
-    eTopicIns[eVar].forEach(function(p) { keyPoints.push(p); });
-    if (topics.length > 1 && eInsights[topics[1]]) {
-      var et2 = eInsights[topics[1]];
-      keyPoints.push(et2[(titleHash + 1) % et2.length][0]);
+    var eTopicData = TOPIC_DEEP[primary] || TOPIC_DEEP['MARKET'];
+    var eVar = titleHash % eTopicData.eng.length;
+    eTopicData.eng[eVar].forEach(function(p) { keyPoints.push(p); });
+    if (topics.length > 1 && TOPIC_DEEP[topics[1]]) {
+      var et2 = TOPIC_DEEP[topics[1]];
+      keyPoints.push(et2.eng[(titleHash + 1) % et2.eng.length][0]);
     }
   }
 
@@ -1138,29 +1280,11 @@ function generateArticle(title) {
   }
 
   // ─── ANALYSIS: hedge fund perspective, unique per title ───
-  var db = hebrew ? HEB : ENG;
   var analysisText = '';
   if (hebrew) {
-    var hfAnalyses = {
-      'AI': ['מנקודת מבט של קרן גידור: סקטור ה-AI נמצא בשלב שבו הפרדה בין מנצחים למפסידים מתחילה. החברות עם moat טכנולוגי ו-recurring revenue ינצחו. השאלה היא לא "האם AI" אלא "איזה AI". המלצה: חשיפה ממוקדת דרך picks, לא סל רחב.','זווית ה-hedge fund: ה-AI trade התפצל. Tier 1 (NVDA, MSFT) כבר מתומחר. ה-alpha נמצא ב-Tier 2 — חברות תוכנה ותשתית שמרוויחות מאימוץ AI. חפשו שם.'],
-      'NVIDIA': ['כמנהל השקעות — נבידיה היא ה-core position בכל תיק טכנולוגיה, אבל בגודל שמאפשר לישון בלילה. התנודתיות גבוהה, המכפילים נמתחו, אבל הביקוש אמיתי. אסטרטגיה: hold core, trade around the position.','מבט של HF: NVDA היא proxy ל-AI. הסיכון: customer concentration ותחרות מ-custom chips. ה-upside: TAM גדל. תנהלו את הפוזיציה — לא תנו לה לנהל אתכם.'],
-      'MARKET': ['מנקודת מבט של HF manager: השוק נראה overextended על פני השטח, אבל ה-breadth מתרחב. הכסף החכם מסתובב — עוזב winners ומחפש laggards. זה שוק של stock picking, לא של beta. תהיו סלקטיביים.','כמנהל קרן: ה-risk/reward לא מצדיק aggressiveness. שמרו על תיק מאוזן, cash allocation גבוהה מהרגיל, ומוכנות לנצל תיקון. הזמן הוא חבר של המוכנים.'],
-      'CRYPTO': ['מנקודת מבט מוסדית: קריפטו נכנס לתקופת legitimization. BTC ETF שינה את המשחק. עדיין — זה 2-5% מהתיק, position size קטן, ו-rebalance קבוע. אל תתאהבו בפוזיציה.','HF perspective: הקריפטו הוא asymmetric bet — ה-downside מוגבל (אם ה-size נכון), ה-upside משמעותי. אבל ה-timing בלתי אפשרי. DCA ומשמעת.'],
-      'FED': ['כמנהל השקעות: הפד הוא המנצח של השוק. כל מילה של פאוול מזיזה טריליונים. ההכנה הנכונה: תרחישים עם הסתברויות, לא הימור על כיוון אחד. barbell strategy — קצר ב-duration + חשיפה לנכסי סיכון.','HF take: השוק ממהר לתמחר rate cuts שאולי לא יגיעו. הסיכון הוא higher for longer. תתכוננו: חברות עם cash flow חיובי, חוב נמוך, ויכולת שרידות.'],
-      'TESLA': ['מנהל HF: טסלה היא מניית conviction — או שאתה מאמין או שלא. כ-trade, היא מצוינת בזכות התנודתיות. כהשקעה, צריך thesis ברור על FSD ורובוטיקה. גודל פוזיציה: קטן מספיק שירידה של 40% לא תכאיב.','Tesla from a PM perspective: הסיכון הוא דה-ראטינג של המכפיל. ה-optionality (FSD, Optimus, energy) מצדיקה premium — אבל כמה? הגדירו price target ו-stop. משמעת.']
-    };
-    var hfA = hfAnalyses[primary] || hfAnalyses['MARKET'];
-    analysisText = hfA[titleHash % hfA.length];
+    analysisText = HEB.analysis[titleHash % HEB.analysis.length];
   } else {
-    var eAnalyses = {
-      'AI': ['Hedge fund perspective: The AI sector is entering the separation phase — winners vs. losers becoming clear. Companies with technological moats and recurring revenue will outperform. The question is not "whether AI" but "which AI". Focus on concentrated picks over broad baskets.','HF take: The AI trade has bifurcated. Tier 1 (NVDA, MSFT) is well-priced. Alpha is in Tier 2 — software and infrastructure companies benefiting from AI adoption. Look there.'],
-      'NVIDIA': ['As a portfolio manager: NVDA is the core tech position, but size it for volatility. Demand is real, multiples are stretched. Strategy: hold core position, trade around it tactically.','HF perspective: NVDA is the AI proxy. Risk: customer concentration and custom chip competition. Upside: TAM expansion. Manage the position — don\'t let it manage you.'],
-      'MARKET': ['HF manager view: Market looks overextended on the surface, but breadth is improving. Smart money is rotating — leaving winners, seeking laggards. This is a stock-picking market, not a beta market.','As a fund manager: Risk/reward doesn\'t justify aggressiveness. Maintain balanced portfolio, higher-than-normal cash allocation, and readiness to capitalize on corrections. Time favors the prepared.'],
-      'FED': ['As a portfolio manager: The Fed is the market\'s conductor. Every Powell word moves trillions. Correct preparation: scenarios with probabilities, not directional bets. Barbell strategy — short duration + risk asset exposure.','HF take: Market is rushing to price rate cuts that may not come. The risk is higher for longer. Prepare: positive cash flow companies, low debt, survivability.'],
-      'CRYPTO': ['Institutional perspective: Crypto entering legitimization phase. BTC ETF changed the game. Still — 2-5% of portfolio, small position size, regular rebalance.','HF view: Crypto is an asymmetric bet — limited downside (with right sizing), significant upside. But timing is impossible. DCA and discipline.']
-    };
-    var eA = eAnalyses[primary] || eAnalyses['MARKET'];
-    analysisText = eA[titleHash % eA.length];
+    analysisText = ENG.analysis[titleHash % ENG.analysis.length];
   }
 
   // Add title-specific context to analysis
