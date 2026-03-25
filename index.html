@@ -346,29 +346,7 @@
     <div class="dashboard-grid" id="dashCommodities"></div>
   </div>
 
-  <div class="run-all-progress" id="runAllProgress"></div>
-  <div class="progress-bar-wrap" id="progressBarWrap"><div class="progress-bar" id="progressBar"></div></div>
-
-  <div class="tabs-wrap">
-    <div class="tabs" id="tabs"></div>
-  </div>
-
-  <div class="custom-input-row" id="customRow">
-    <input type="text" id="customInput" placeholder="https://www.youtube.com/@ChannelName" />
-    <button class="btn" id="customBtn" onclick="loadCustomChannel()">
-      <span class="spinner"></span> YouTS
-    </button>
-  </div>
-
-  <div class="channel-info" id="channelInfo">
-    <div class="channel-name" id="channelName"></div>
-    <div class="channel-meta" id="channelMeta"></div>
-  </div>
-
-  <div class="error-msg" id="errorMsg"></div>
-  <div class="status" id="status"></div>
-
-  <!-- ═══ Stock Ticker Lookup Widget ═══ -->
+    <!-- ═══ Stock Ticker Lookup Widget ═══ -->
   <div id="tickerWidget" style="margin-bottom:24px;background:var(--card-bg);border:1px solid var(--card-border);border-radius:12px;padding:20px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
       <div style="font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--gold-light);">Stock Lookup</div>
@@ -391,6 +369,31 @@
     <!-- Results area -->
     <div id="tickerResults" style="display:none;"></div>
   </div>
+
+
+  <div class="run-all-progress" id="runAllProgress"></div>
+  <div class="progress-bar-wrap" id="progressBarWrap"><div class="progress-bar" id="progressBar"></div></div>
+
+  <div class="tabs-wrap">
+    <div class="tabs" id="tabs"></div>
+  </div>
+
+  <div class="custom-input-row" id="customRow">
+    <input type="text" id="customInput" placeholder="https://www.youtube.com/@ChannelName" />
+    <button class="btn" id="customBtn" onclick="loadCustomChannel()">
+      <span class="spinner"></span> YouTS
+    </button>
+  </div>
+
+  <div class="channel-info" id="channelInfo">
+    <div class="channel-name" id="channelName"></div>
+    <div class="channel-meta" id="channelMeta"></div>
+  </div>
+
+  <div class="error-msg" id="errorMsg"></div>
+  <div class="status" id="status"></div>
+
+
 
   <div class="grid" id="grid"></div>
   <div class="conclusions-panel" id="conclusionsPanel"></div>
@@ -2369,27 +2372,27 @@ function lookupTicker() {
   resultsDiv.style.display = 'block';
   resultsDiv.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-dim);">טוען נתונים עבור ' + symbol + '...</div>';
 
-  fetch('/api/quote?symbol=' + encodeURIComponent(symbol))
+  fetch('/api/quote?symbols=' + encodeURIComponent(symbol))
     .then(function(r) { return r.json(); })
     .then(function(data) {
-      if (data.error) {
-        resultsDiv.innerHTML = '<div style="padding:12px;color:#e74c3c;font-size:0.85rem;">שגיאה: ' + data.error + '</div>';
+      var q = data[symbol];
+      if (!q) {
+        resultsDiv.innerHTML = '<div style="padding:12px;color:#e74c3c;font-size:0.85rem;">לא נמצאו נתונים עבור ' + symbol + '</div>';
         return;
       }
-      var q = data;
-      var price = q.price || q.regularMarketPrice || 0;
-      var change = q.change || q.regularMarketChange || 0;
-      var changePct = q.changePercent || q.regularMarketChangePercent || 0;
-      var name = q.name || q.shortName || q.longName || symbol;
-      var prevClose = q.previousClose || 0;
-      var high = q.dayHigh || q.regularMarketDayHigh || 0;
-      var low = q.dayLow || q.regularMarketDayLow || 0;
-      var volume = q.volume || q.regularMarketVolume || 0;
-      var marketCap = q.marketCap || 0;
-      var pe = q.trailingPE || q.forwardPE || 0;
-      var week52High = q.fiftyTwoWeekHigh || 0;
-      var week52Low = q.fiftyTwoWeekLow || 0;
-      var avgVol = q.averageDailyVolume3Month || q.averageVolume || 0;
+      var price = q.price || 0;
+      var prevClose = q.prevClose || price;
+      var change = price - prevClose;
+      var changePct = prevClose > 0 ? ((change / prevClose) * 100) : 0;
+      var name = symbol;
+      var high = 0;
+      var low = 0;
+      var volume = 0;
+      var marketCap = 0;
+      var pe = 0;
+      var week52High = 0;
+      var week52Low = 0;
+      var avgVol = 0;
 
       var changeColor = change >= 0 ? '#4CAF50' : '#e74c3c';
       var changeSign = change >= 0 ? '+' : '';
@@ -2456,12 +2459,14 @@ function fetchWatchlistQuotes() {
   if (!container) return;
 
   tickerWatchlist.forEach(function(sym) {
-    fetch('/api/quote?symbol=' + encodeURIComponent(sym))
+    fetch('/api/quote?symbols=' + encodeURIComponent(sym))
       .then(function(r) { return r.json(); })
       .then(function(data) {
-        if (data.error) return;
-        var price = data.price || data.regularMarketPrice || 0;
-        var changePct = data.changePercent || data.regularMarketChangePercent || 0;
+        var qd = data[sym];
+        if (!qd) return;
+        var price = qd.price || 0;
+        var prevC = qd.prevClose || price;
+        var changePct = prevC > 0 ? (((price - prevC) / prevC) * 100) : 0;
         var color = changePct >= 0 ? '#4CAF50' : '#e74c3c';
         var sign = changePct >= 0 ? '+' : '';
         // Update the tag for this symbol
