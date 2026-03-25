@@ -2418,16 +2418,14 @@ function lookupTicker() {
       html += '</div>';
       html += '</div>';
       // Data grid
-      html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;padding:0;">';
+      html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;padding:0;">';
       var cells = [
         ['Day Range', '$' + low.toFixed(2) + ' — $' + high.toFixed(2)],
         ['Prev Close', '$' + prevClose.toFixed(2)],
-        ['Volume', volume > 1e6 ? (volume/1e6).toFixed(1) + 'M' : volume > 0 ? volume.toLocaleString() : 'N/A'],
-        ['Avg Volume', avgVol > 1e6 ? (avgVol/1e6).toFixed(1) + 'M' : avgVol > 0 ? avgVol.toLocaleString() : 'N/A'],
-        ['52W High', week52High > 0 ? '$' + week52High.toFixed(2) + ' (' + fromHigh + '%)' : 'N/A'],
-        ['52W Low', week52Low > 0 ? '$' + week52Low.toFixed(2) + ' (+' + fromLow + '%)' : 'N/A'],
-        ['Vol Ratio', volRatio + 'x'],
-        marketCap > 0 ? ['Market Cap', marketCap > 1e12 ? '$' + (marketCap/1e12).toFixed(2) + 'T' : marketCap > 1e9 ? '$' + (marketCap/1e9).toFixed(1) + 'B' : '$' + (marketCap/1e6).toFixed(0) + 'M'] : ['P/E', pe > 0 ? pe.toFixed(1) : 'N/A']
+        ['Volume', volume > 1e6 ? (volume/1e6).toFixed(1) + 'M' : volume > 0 ? volume.toLocaleString() : '—'],
+        ['52W High', week52High > 0 ? '$' + week52High.toFixed(2) + ' (' + fromHigh + '%)' : '—'],
+        ['52W Low', week52Low > 0 ? '$' + week52Low.toFixed(2) + ' (+' + fromLow + '%)' : '—'],
+        ['Avg Volume', avgVol > 1e6 ? (avgVol/1e6).toFixed(1) + 'M' : avgVol > 0 ? avgVol.toLocaleString() : '—']
       ];
       cells.forEach(function(c, i) {
         var bg = i < 4 ? '#0d0d0d' : 'transparent';
