@@ -2388,11 +2388,13 @@ function lookupTicker() {
       var high = q.dayHigh || 0;
       var low = q.dayLow || 0;
       var volume = q.volume || 0;
-      var marketCap = 0;
-      var pe = 0;
+      var marketCap = q.marketCap || 0;
+      var pe = q.trailingPE || q.forwardPE || 0;
       var week52High = q.week52High || 0;
       var week52Low = q.week52Low || 0;
       var avgVol = q.avgVolume || 0;
+      var beta = q.beta || 0;
+      var divYield = q.dividendYield || 0;
 
       var changeColor = change >= 0 ? '#4CAF50' : '#e74c3c';
       var changeSign = change >= 0 ? '+' : '';
@@ -2418,14 +2420,14 @@ function lookupTicker() {
       // Data grid
       html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;padding:0;">';
       var cells = [
-        ['Volume', volume > 1e6 ? (volume/1e6).toFixed(1) + 'M' : volume.toLocaleString()],
-        ['Vol Ratio', volRatio + 'x'],
-        ['Market Cap', marketCap > 1e12 ? '$' + (marketCap/1e12).toFixed(2) + 'T' : marketCap > 1e9 ? '$' + (marketCap/1e9).toFixed(1) + 'B' : marketCap > 1e6 ? '$' + (marketCap/1e6).toFixed(0) + 'M' : 'N/A'],
-        ['P/E', pe > 0 ? pe.toFixed(1) : 'N/A'],
-        ['Day Range', '$' + low.toFixed(2) + ' - $' + high.toFixed(2)],
+        ['Day Range', '$' + low.toFixed(2) + ' — $' + high.toFixed(2)],
         ['Prev Close', '$' + prevClose.toFixed(2)],
+        ['Volume', volume > 1e6 ? (volume/1e6).toFixed(1) + 'M' : volume > 0 ? volume.toLocaleString() : 'N/A'],
+        ['Avg Volume', avgVol > 1e6 ? (avgVol/1e6).toFixed(1) + 'M' : avgVol > 0 ? avgVol.toLocaleString() : 'N/A'],
         ['52W High', week52High > 0 ? '$' + week52High.toFixed(2) + ' (' + fromHigh + '%)' : 'N/A'],
-        ['52W Low', week52Low > 0 ? '$' + week52Low.toFixed(2) + ' (+' + fromLow + '%)' : 'N/A']
+        ['52W Low', week52Low > 0 ? '$' + week52Low.toFixed(2) + ' (+' + fromLow + '%)' : 'N/A'],
+        ['Vol Ratio', volRatio + 'x'],
+        marketCap > 0 ? ['Market Cap', marketCap > 1e12 ? '$' + (marketCap/1e12).toFixed(2) + 'T' : marketCap > 1e9 ? '$' + (marketCap/1e9).toFixed(1) + 'B' : '$' + (marketCap/1e6).toFixed(0) + 'M'] : ['P/E', pe > 0 ? pe.toFixed(1) : 'N/A']
       ];
       cells.forEach(function(c, i) {
         var bg = i < 4 ? '#0d0d0d' : 'transparent';
