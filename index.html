@@ -390,30 +390,14 @@ var CHANNELS = [
   { id: 'yahoo', label: 'Yahoo Finance', handle: 'YahooFinance', cat: 'macro' }
 ];
 
-var PROXIES = [
-  'https://corsproxy.io/?url=',
-  'https://api.allorigins.win/raw?url=',
-  'https://api.codetabs.com/v1/proxy?quest='
-];
-
 async function fetchViaProxy(url) {
-  var lastErr = null;
-  // Try cors.eu.org first (direct URL append, no encode)
   try {
-    var resp0 = await fetch('https://cors.eu.org/' + url);
-    if (resp0.ok) return await resp0.text();
-  } catch(e) { lastErr = e; }
-  // Then try encoded proxies
-  for (var p = 0; p < PROXIES.length; p++) {
-    try {
-      var resp = await fetch(PROXIES[p] + encodeURIComponent(url));
-      if (resp.ok) return await resp.text();
-      lastErr = new Error('HTTP ' + resp.status);
-    } catch (e) {
-      lastErr = e;
-    }
+    var resp = await fetch('/api/proxy?url=' + encodeURIComponent(url));
+    if (resp.ok) return await resp.text();
+    throw new Error('Proxy returned HTTP ' + resp.status);
+  } catch (e) {
+    throw e;
   }
-  throw lastErr || new Error('כל ה-proxies נכשלו');
 }
 
 // channelData[tabId] = { channelName, channelMeta, videos[], articles[] }
