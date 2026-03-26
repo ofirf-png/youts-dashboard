@@ -2279,6 +2279,8 @@ async function refreshDashboard() {
 
   // Update Fear & Greed meter based on VIX
   updateFearGreed();
+  // Update FedWatch rate probability
+  fetchFedWatch();
 }
 
 async function updateFearGreed() {
@@ -2506,7 +2508,7 @@ function fetchWatchlistQuotes() {
 }
 
 // Initialize watchlist on load
-document.addEventListener('DOMContentLoaded', function() { renderWatchlist(); });
+document.addEventListener('DOMContentLoaded', function() { renderWatchlist(); fetchFedWatch(); });
 
 // ═══ FedWatch Rate Probability ═══
 async function fetchFedWatch() {
