@@ -6,10 +6,9 @@ export default async function handler(req, res) {
   const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
 
   try {
-    // Get current week's Monday and Friday
     const now = new Date();
     const day = now.getDay();
-    const diff = now.getDate() - day + (day === 0 ? -6 : 1); // Monday
+    const diff = now.getDate() - day + (day === 0 ? -6 : 1);
     const monday = new Date(now);
     monday.setDate(diff);
     monday.setHours(0,0,0,0);
@@ -21,18 +20,16 @@ export default async function handler(req, res) {
     const startDate = fmt(monday);
     const endDate = fmt(friday);
 
-    // Try Yahoo Finance earnings calendar
-    const results = { startDate, endDate, days: {} };
     const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+    const results = { startDate, endDate, days: {} };
 
-    // Initialize days
     for (let i = 0; i < 5; i++) {
       const d = new Date(monday);
       d.setDate(monday.getDate() + i);
       results.days[dayNames[i]] = { date: fmt(d), beforeOpen: [], afterClose: [] };
     }
 
-    // Fetch earnings for each day of the week
+    // Fetch each day individually
     for (let i = 0; i < 5; i++) {
       const d = new Date(monday);
       d.setDate(monday.getDate() + i);
@@ -41,96 +38,73 @@ export default async function handler(req, res) {
       try {
         const url = `https://finance.yahoo.com/calendar/earnings?day=${dateStr}`;
         const r = await fetch(url, {
-          headers: { 'User-Agent': UA },
+          headers: { 'User-Agent': UA, 'Accept': 'text/html,application/xhtml+xml' },
           signal: AbortSignal.timeout(10000)
         });
 
-        if (r.ok) {
-          const html = await r.text();
+        if (!r.ok) continue;
+        const html = await r.text();
 
-          // Parse earnings from the HTML - look for JSON data
-          const jsonMatch = html.match(/\"rows\"\s*:\s*(\[[\s\S]*?\])\s*,\s*\"columns/);
-          if (jsonMatch) {
-            try {
-              const rows = JSON.parse(jsonMatch[1]);
-              rows.forEach(function(row) {
-                const ticker = row.ticker || '';
-                const company = row.companyshortname || '';
-                const time = row.startdatetimetype || '';
-                const epsEstimate = row.epsestimate || '';
-
-                const entry = { ticker, company, epsEstimate };
-
-                if (time === 'BMO' || time === 'TAS') {
-                  results.days[dayNames[i]].beforeOpen.push(entry);
-                } else {
-                  results.days[dayNames[i]].afterClose.push(entry);
-                }
-              });
-            } catch(e) {}
-          }
-
-          // Alternative: try to find earnings data in a different format
-          if (results.days[dayNames[i]].beforeOpen.length === 0 && results.days[dayNames[i]].afterClose.length === 0) {
-            // Try extracting from table rows
-            const tickerRegex = /data-symbol="([A-Z.]+)"/g;
-            let match;
-            const tickers = [];
-            while ((match = tickerRegex.exec(html)) !== null) {
-              tickers.push(match[1]);
-            }
-            // Put them all as TBD timing
-            tickers.slice(0, 30).forEach(function(t) {
-              results.days[dayNames[i]].beforeOpen.push({ ticker: t, company: '', epsEstimate: '' });
+        // Method 1: Try to find structured data in script tags
+        const dataMatch = html.match(/"rows"\s*:\s*(\[[\s\S]*?\])\s*,\s*"columns/);
+        if (dataMatch) {
+          try {
+            const rows = JSON.parse(dataMatch[1]);
+            const seen = new Set();
+            rows.forEach(function(row) {
+              const ticker = row.ticker || '';
+              if (!ticker || seen.has(ticker)) return;
+              seen.add(ticker);
+              const company = row.companyshortname || '';
+              const time = row.startdatetimetype || '';
+              const epsEstimate = row.epsestimate || '';
+              const entry = { ticker, company, epsEstimate };
+              if (time === 'BMO' || time === 'TAS') {
+                results.days[dayNames[i]].beforeOpen.push(entry);
+              } else {
+                results.days[dayNames[i]].afterClose.push(entry);
+              }
             });
+            continue;
+          } catch(e) {}
+        }
+
+        // Method 2: Parse from table - extract unique symbols
+        const seen = new Set();
+        // Look for table rows with ticker symbols
+        const rowRegex = /<tr[^>]*>[\s\S]*?<\/tr>/gi;
+        let rowMatch;
+        while ((rowMatch = rowRegex.exec(html)) !== null) {
+          const row = rowMatch[0];
+          const symMatch = row.match(/data-symbol="([A-Z.]{1,6})"/);
+          if (symMatch && !seen.has(symMatch[1])) {
+            const ticker = symMatch[1];
+            seen.add(ticker);
+            // Try to get timing (BMO/AMC)
+            const isBMO = row.includes('Before Market Open') || row.includes('BMO') || row.includes('TAS');
+            const entry = { ticker, company: '', epsEstimate: '' };
+            // Try to extract company name
+            const nameMatch = row.match(/title="([^"]+)"/);
+            if (nameMatch) entry.company = nameMatch[1];
+            if (isBMO) {
+              results.days[dayNames[i]].beforeOpen.push(entry);
+            } else {
+              results.days[dayNames[i]].afterClose.push(entry);
+            }
           }
         }
-      } catch(e) {}
-    }
 
-    // If Yahoo didn't work well, try alternative: scrape from stockanalysis.com
-    const totalCount = Object.values(results.days).reduce((sum, d) => sum + d.beforeOpen.length + d.afterClose.length, 0);
-
-    if (totalCount === 0) {
-      // Fallback: use Yahoo Finance v1 API
-      try {
-        const apiUrl = `https://finance.yahoo.com/calendar/earnings?from=${startDate}&to=${endDate}&offset=0&size=100`;
-        const r = await fetch(apiUrl, {
-          headers: { 'User-Agent': UA, 'Accept': 'text/html' },
-          signal: AbortSignal.timeout(10000)
-        });
-        if (r.ok) {
-          const html = await r.text();
-          // Extract company data from script tags
-          const scriptMatch = html.match(/root\.App\.main\s*=\s*({[\s\S]*?});/);
-          if (scriptMatch) {
-            try {
-              const appData = JSON.parse(scriptMatch[1]);
-              const rows = appData?.context?.dispatcher?.stores?.ScreenerResultsStore?.results?.rows || [];
-              rows.forEach(function(row) {
-                const ticker = row.ticker || '';
-                const company = row.companyshortname || '';
-                const time = row.startdatetimetype || '';
-                const dateStr2 = (row.startdatetime || '').split('T')[0];
-                const epsEstimate = row.epsestimate || '';
-
-                // Find which day this belongs to
-                for (let j = 0; j < 5; j++) {
-                  const dd = new Date(monday);
-                  dd.setDate(monday.getDate() + j);
-                  if (fmt(dd) === dateStr2) {
-                    const entry = { ticker, company, epsEstimate };
-                    if (time === 'BMO' || time === 'TAS') {
-                      results.days[dayNames[j]].beforeOpen.push(entry);
-                    } else {
-                      results.days[dayNames[j]].afterClose.push(entry);
-                    }
-                    break;
-                  }
-                }
-              });
-            } catch(e) {}
+        // Method 3: If still empty, try simpler extraction
+        if (results.days[dayNames[i]].beforeOpen.length === 0 && results.days[dayNames[i]].afterClose.length === 0) {
+          const allSymbols = new Set();
+          const symRegex = /data-symbol="([A-Z.]{1,6})"/g;
+          let m;
+          while ((m = symRegex.exec(html)) !== null) {
+            allSymbols.add(m[1]);
           }
+          allSymbols.forEach(function(t) {
+            results.days[dayNames[i]].beforeOpen.push({ ticker: t, company: '', epsEstimate: '' });
+          });
         }
       } catch(e) {}
     }
