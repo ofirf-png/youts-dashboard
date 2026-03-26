@@ -2640,7 +2640,16 @@ async function renderEarningsCalendar() {
 
     html += '</div>'; // end grid
 
-    if (totalEarnings === 0) {
+    if (totalEarnings === 0 && data.allWeek && data.allWeek.length > 0) {
+      // Fallback: show all week's earnings as a single list
+      html += '<div style="margin-top:16px;background:var(--card-bg);border:1px solid var(--card-border);border-radius:8px;padding:16px;">';
+      html += '<div style="font-size:0.7rem;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">חברות שמדווחות השבוע (ללא חלוקה ליום)</div>';
+      html += '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
+      data.allWeek.forEach(function(t) {
+        html += '<span onclick="lookupTickerDirect(\'' + t + '\')" style="background:#0d0d0d;border:1px solid var(--card-border);border-radius:4px;padding:4px 10px;font-size:0.75rem;color:var(--text);cursor:pointer;font-weight:600;" onmouseover="this.style.borderColor=\'var(--gold)\'" onmouseout="this.style.borderColor=\'var(--card-border)\'">' + t + '</span>';
+      });
+      html += '</div></div>';
+    } else if (totalEarnings === 0) {
       html += '<div style="text-align:center;margin-top:20px;padding:20px;background:var(--card-bg);border:1px solid var(--card-border);border-radius:8px;">';
       html += '<div style="font-size:0.85rem;color:var(--text-dim);margin-bottom:8px;">לא נמצאו דוחות לשבוע זה</div>';
       html += '<a href="https://www.earningswhispers.com/calendar" target="_blank" style="color:var(--gold);font-size:0.8rem;">צפו בלוח הדוחות המלא ב-Earnings Whispers →</a>';
