@@ -22,91 +22,112 @@ export default async function handler(req, res) {
 
     const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
     const results = { startDate, endDate, days: {} };
+    const dayDates = {};
 
     for (let i = 0; i < 5; i++) {
       const d = new Date(monday);
       d.setDate(monday.getDate() + i);
-      results.days[dayNames[i]] = { date: fmt(d), beforeOpen: [], afterClose: [] };
+      const ds = fmt(d);
+      results.days[dayNames[i]] = { date: ds, beforeOpen: [], afterClose: [] };
+      dayDates[ds] = dayNames[i];
     }
 
-    // Fetch each day individually
-    for (let i = 0; i < 5; i++) {
-      const d = new Date(monday);
-      d.setDate(monday.getDate() + i);
-      const dateStr = fmt(d);
+    // Fetch the whole week at once
+    const url = `https://finance.yahoo.com/calendar/earnings?from=${startDate}&to=${endDate}&offset=0&size=200`;
+    const r = await fetch(url, {
+      headers: { 'User-Agent': UA, 'Accept': 'text/html,application/xhtml+xml' },
+      signal: AbortSignal.timeout(15000)
+    });
 
-      try {
-        const url = `https://finance.yahoo.com/calendar/earnings?day=${dateStr}`;
-        const r = await fetch(url, {
-          headers: { 'User-Agent': UA, 'Accept': 'text/html,application/xhtml+xml' },
-          signal: AbortSignal.timeout(10000)
-        });
+    if (r.ok) {
+      const html = await r.text();
 
-        if (!r.ok) continue;
-        const html = await r.text();
+      // Method 1: Try structured JSON in page
+      const dataMatch = html.match(/"rows"\s*:\s*(\[[\s\S]*?\])\s*,\s*"columns/);
+      if (dataMatch) {
+        try {
+          const rows = JSON.parse(dataMatch[1]);
+          const seen = {};
+          rows.forEach(function(row) {
+            const ticker = row.ticker || '';
+            const dateStr = (row.startdatetime || '').split('T')[0];
+            const dayName = dayDates[dateStr];
+            if (!ticker || !dayName) return;
+            const key = ticker + '_' + dateStr;
+            if (seen[key]) return;
+            seen[key] = true;
 
-        // Method 1: Try to find structured data in script tags
-        const dataMatch = html.match(/"rows"\s*:\s*(\[[\s\S]*?\])\s*,\s*"columns/);
-        if (dataMatch) {
-          try {
-            const rows = JSON.parse(dataMatch[1]);
-            const seen = new Set();
-            rows.forEach(function(row) {
-              const ticker = row.ticker || '';
-              if (!ticker || seen.has(ticker)) return;
-              seen.add(ticker);
-              const company = row.companyshortname || '';
-              const time = row.startdatetimetype || '';
-              const epsEstimate = row.epsestimate || '';
-              const entry = { ticker, company, epsEstimate };
-              if (time === 'BMO' || time === 'TAS') {
-                results.days[dayNames[i]].beforeOpen.push(entry);
-              } else {
-                results.days[dayNames[i]].afterClose.push(entry);
-              }
-            });
-            continue;
-          } catch(e) {}
-        }
-
-        // Method 2: Parse from table - extract unique symbols
-        const seen = new Set();
-        // Look for table rows with ticker symbols
-        const rowRegex = /<tr[^>]*>[\s\S]*?<\/tr>/gi;
-        let rowMatch;
-        while ((rowMatch = rowRegex.exec(html)) !== null) {
-          const row = rowMatch[0];
-          const symMatch = row.match(/data-symbol="([A-Z.]{1,6})"/);
-          if (symMatch && !seen.has(symMatch[1])) {
-            const ticker = symMatch[1];
-            seen.add(ticker);
-            // Try to get timing (BMO/AMC)
-            const isBMO = row.includes('Before Market Open') || row.includes('BMO') || row.includes('TAS');
-            const entry = { ticker, company: '', epsEstimate: '' };
-            // Try to extract company name
-            const nameMatch = row.match(/title="([^"]+)"/);
-            if (nameMatch) entry.company = nameMatch[1];
-            if (isBMO) {
-              results.days[dayNames[i]].beforeOpen.push(entry);
+            const company = row.companyshortname || '';
+            const time = row.startdatetimetype || '';
+            const epsEstimate = row.epsestimate || '';
+            const entry = { ticker, company, epsEstimate };
+            if (time === 'BMO' || time === 'TAS') {
+              results.days[dayName].beforeOpen.push(entry);
             } else {
-              results.days[dayNames[i]].afterClose.push(entry);
+              results.days[dayName].afterClose.push(entry);
+            }
+          });
+        } catch(e) {}
+      }
+
+      // Method 2: Parse HTML tables if Method 1 didn't work
+      const totalCount = Object.values(results.days).reduce((s, d) => s + d.beforeOpen.length + d.afterClose.length, 0);
+      if (totalCount === 0) {
+        // Try to extract from table - each row has: Symbol, Company, Date, Time, EPS Est, EPS Actual, Surprise
+        const tableMatch = html.match(/<tbody>([\s\S]*?)<\/tbody>/);
+        if (tableMatch) {
+          const tbody = tableMatch[1];
+          const rowRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
+          let rowMatch;
+          const seen = {};
+          while ((rowMatch = rowRegex.exec(tbody)) !== null) {
+            const cells = [];
+            const cellRegex = /<td[^>]*>([\s\S]*?)<\/td>/gi;
+            let cellMatch;
+            while ((cellMatch = cellRegex.exec(rowMatch[1])) !== null) {
+              cells.push(cellMatch[1].replace(/<[^>]+>/g, '').trim());
+            }
+            if (cells.length >= 4) {
+              const ticker = cells[0];
+              const company = cells[1];
+              // Date might be in cells[2] or cells[3]
+              let dateStr = '';
+              let time = '';
+              for (let c = 2; c < cells.length; c++) {
+                if (/^\d{4}-\d{2}-\d{2}/.test(cells[c])) dateStr = cells[c].substring(0,10);
+                if (/BMO|AMC|TAS|TNS/.test(cells[c])) time = cells[c];
+              }
+
+              const dayName = dayDates[dateStr];
+              if (!ticker || !dayName) continue;
+              const key = ticker + '_' + dateStr;
+              if (seen[key]) continue;
+              seen[key] = true;
+
+              const entry = { ticker, company, epsEstimate: '' };
+              if (time === 'BMO' || time === 'TAS') {
+                results.days[dayName].beforeOpen.push(entry);
+              } else {
+                results.days[dayName].afterClose.push(entry);
+              }
             }
           }
         }
+      }
 
-        // Method 3: If still empty, try simpler extraction
-        if (results.days[dayNames[i]].beforeOpen.length === 0 && results.days[dayNames[i]].afterClose.length === 0) {
-          const allSymbols = new Set();
-          const symRegex = /data-symbol="([A-Z.]{1,6})"/g;
-          let m;
-          while ((m = symRegex.exec(html)) !== null) {
-            allSymbols.add(m[1]);
-          }
-          allSymbols.forEach(function(t) {
-            results.days[dayNames[i]].beforeOpen.push({ ticker: t, company: '', epsEstimate: '' });
-          });
+      // Method 3: Last resort - try data-symbol with date context
+      const totalCount2 = Object.values(results.days).reduce((s, d) => s + d.beforeOpen.length + d.afterClose.length, 0);
+      if (totalCount2 === 0) {
+        // Just get unique symbols from page as a flat list for the whole week
+        const allSymbols = new Set();
+        const symRegex = /data-symbol="([A-Z.]{1,6})"/g;
+        let m;
+        while ((m = symRegex.exec(html)) !== null) {
+          allSymbols.add(m[1]);
         }
-      } catch(e) {}
+        // Put them all under a special "all" key
+        results.allWeek = Array.from(allSymbols);
+      }
     }
 
     res.status(200).json(results);
