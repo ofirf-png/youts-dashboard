@@ -5,23 +5,137 @@ export default async function handler(req, res) {
 
   const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
 
-  // ═══ SOURCE 1: CME FedWatch JSON endpoints ═══
+  // Current rate as of March 18 2026 FOMC: 3.50% - 3.75% (held steady)
+  const CURRENT_UPPER = 3.75;
+  const CURRENT_LOWER = 3.50;
+  const CURRENT_MID = (CURRENT_UPPER + CURRENT_LOWER) / 2; // 3.625
+  const CUT_MID = CURRENT_MID - 0.25; // 3.375 (one 25bp cut)
+
+  // 2026 FOMC meeting dates (remaining)
+  const fomcMeetings = [
+    { date: '2026-05-06', label: 'May 6-7' },
+    { date: '2026-06-17', label: 'Jun 17-18' },
+    { date: '2026-07-29', label: 'Jul 29-30' },
+    { date: '2026-09-16', label: 'Sep 16-17' },
+    { date: '2026-10-28', label: 'Oct 28-29' },
+    { date: '2026-12-09', label: 'Dec 9-10' }
+  ];
+
+  // Fed Funds Futures month codes: F=Jan G=Feb H=Mar J=Apr K=May M=Jun N=Jul Q=Aug U=Sep V=Oct X=Nov Z=Dec
+  const futuresTickers = [
+    { ticker: 'ZQK26.CBT', meeting: 'May 6-7', meetingDate: '2026-05-06' },
+    { ticker: 'ZQM26.CBT', meeting: 'Jun 17-18', meetingDate: '2026-06-17' },
+    { ticker: 'ZQN26.CBT', meeting: 'Jul 29-30', meetingDate: '2026-07-29' },
+    { ticker: 'ZQU26.CBT', meeting: 'Sep 16-17', meetingDate: '2026-09-16' },
+    { ticker: 'ZQV26.CBT', meeting: 'Oct 28-29', meetingDate: '2026-10-28' },
+    { ticker: 'ZQZ26.CBT', meeting: 'Dec 9-10', meetingDate: '2026-12-09' }
+  ];
+
+  // ═══ SOURCE 1: Yahoo Finance Fed Funds Futures ═══
+  try {
+    const symbols = futuresTickers.map(f => f.ticker).join(',');
+    const yUrl = `https://query2.finance.yahoo.com/v7/finance/quote?symbols=${symbols}&fields=symbol,regularMarketPrice,regularMarketPreviousClose`;
+    const r = await fetch(yUrl, {
+      headers: {
+        'User-Agent': UA,
+        'Accept': 'application/json'
+      },
+      signal: AbortSignal.timeout(10000)
+    });
+    if (r.ok) {
+      const data = await r.json();
+      const quotes = data?.quoteResponse?.result || [];
+      if (quotes.length > 0) {
+        const meetings = [];
+        let prevImpliedRate = CURRENT_MID;
+
+        for (const ft of futuresTickers) {
+          const quote = quotes.find(q => q.symbol === ft.ticker);
+          if (quote && quote.regularMarketPrice) {
+            const price = quote.regularMarketPrice;
+            const impliedRate = 100 - price;
+
+            // Probability of cut at THIS meeting (incremental)
+            // P(cut) = (prevImpliedRate - impliedRate) / 0.25
+            const cutProb = Math.max(0, Math.min(100, ((prevImpliedRate - impliedRate) / 0.25) * 100));
+            const holdProb = Math.max(0, 100 - cutProb);
+
+            meetings.push({
+              meetingDate: ft.meeting,
+              date: ft.meetingDate,
+              impliedRate: impliedRate.toFixed(3),
+              cutProbability: Math.round(cutProb * 10) / 10,
+              holdProbability: Math.round(holdProb * 10) / 10,
+              futuresPrice: price
+            });
+
+            // For cumulative: use this meeting's implied rate as base for next
+            // But for non-meeting months we skip, so use the actual implied rate
+            prevImpliedRate = impliedRate;
+          }
+        }
+
+        if (meetings.length > 0) {
+          return res.status(200).json({
+            source: 'futures',
+            data: {
+              currentRate: `${CURRENT_LOWER.toFixed(2)}% - ${CURRENT_UPPER.toFixed(2)}%`,
+              meetings: meetings,
+              note: 'Probabilities derived from Fed Funds Futures (Yahoo Finance)'
+            }
+          });
+        }
+      }
+    }
+  } catch(e) {}
+
+  // ═══ SOURCE 1b: Try alternative Yahoo ticker formats ═══
+  try {
+    const altTickers = ['ZQ=F', 'ZQK2026.CBT', 'ZQM2026.CBT'];
+    const symbols = altTickers.join(',');
+    const yUrl = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbols}`;
+    const r = await fetch(yUrl, {
+      headers: { 'User-Agent': UA, 'Accept': 'application/json' },
+      signal: AbortSignal.timeout(8000)
+    });
+    if (r.ok) {
+      const data = await r.json();
+      const quotes = data?.quoteResponse?.result || [];
+      if (quotes.length > 0) {
+        const frontMonth = quotes[0];
+        const impliedRate = 100 - frontMonth.regularMarketPrice;
+        const cutProb = Math.max(0, Math.min(100, ((CURRENT_MID - impliedRate) / 0.25) * 100));
+
+        return res.status(200).json({
+          source: 'futures-alt',
+          data: {
+            currentRate: `${CURRENT_LOWER.toFixed(2)}% - ${CURRENT_UPPER.toFixed(2)}%`,
+            frontMonthImpliedRate: impliedRate.toFixed(3),
+            cutProbability: Math.round(cutProb * 10) / 10,
+            holdProbability: Math.round((100 - cutProb) * 10) / 10,
+            ticker: frontMonth.symbol,
+            price: frontMonth.regularMarketPrice
+          }
+        });
+      }
+    }
+  } catch(e) {}
+
+  // ═══ SOURCE 2: CME FedWatch JSON endpoints ═══
   const cmeEndpoints = [
     'https://www.cmegroup.com/services/fed-fund-target/fed-fund-target.json',
     'https://www.cmegroup.com/CmeWS/mvc/FedWatch/GetMiniFedWatch',
     'https://www.cmegroup.com/services/fedWatch.json'
   ];
-
   for (const url of cmeEndpoints) {
     try {
       const r = await fetch(url, {
         headers: {
           'User-Agent': UA,
           'Accept': 'application/json, text/plain, */*',
-          'Referer': 'https://www.cmegroup.com/markets/interest-rates/cme-fedwatch-tool.html',
-          'Origin': 'https://www.cmegroup.com'
+          'Referer': 'https://www.cmegroup.com/markets/interest-rates/cme-fedwatch-tool.html'
         },
-        signal: AbortSignal.timeout(8000)
+        signal: AbortSignal.timeout(6000)
       });
       if (r.ok) {
         const data = await r.json();
@@ -32,97 +146,41 @@ export default async function handler(req, res) {
     } catch(e) {}
   }
 
-  // ═══ SOURCE 2: Scrape CME FedWatch page for embedded data ═══
+  // ═══ SOURCE 3: FRED API ═══
   try {
-    const pageUrl = 'https://www.cmegroup.com/markets/interest-rates/cme-fedwatch-tool.html';
-    const r = await fetch(pageUrl, {
-      headers: {
-        'User-Agent': UA,
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.9'
-      },
-      signal: AbortSignal.timeout(10000)
-    });
-    if (r.ok) {
-      const html = await r.text();
-      // Look for JSON data embedded in page
-      const jsonMatch = html.match(/fedWatchData\s*[:=]\s*(\{[\s\S]*?\})\s*[;,]/);
-      const jsonMatch2 = html.match(/"meetings"\s*:\s*(\[[\s\S]*?\])/);
-      const jsonMatch3 = html.match(/window\.__NEXT_DATA__\s*=\s*(\{[\s\S]*?\})\s*<\/script>/);
-
-      if (jsonMatch) {
-        try {
-          const data = JSON.parse(jsonMatch[1]);
-          return res.status(200).json({ source: 'cme-page', data });
-        } catch(e) {}
-      }
-      if (jsonMatch2) {
-        try {
-          const meetings = JSON.parse(jsonMatch2[1]);
-          return res.status(200).json({ source: 'cme-page', data: { meetings } });
-        } catch(e) {}
-      }
-      if (jsonMatch3) {
-        try {
-          const nextData = JSON.parse(jsonMatch3[1]);
-          return res.status(200).json({ source: 'cme-nextdata', data: nextData.props || nextData });
-        } catch(e) {}
-      }
-    }
-  } catch(e) {}
-
-  // ═══ SOURCE 3: Use FRED API for Fed Funds Rate + futures implied ═══
-  try {
-    // Get current Fed Funds effective rate from FRED
     const fredUrl = 'https://api.stlouisfed.org/fred/series/observations?series_id=DFEDTARU&limit=1&sort_order=desc&file_type=json&api_key=DEMO_KEY';
     const r = await fetch(fredUrl, {
       headers: { 'User-Agent': UA },
-      signal: AbortSignal.timeout(8000)
+      signal: AbortSignal.timeout(6000)
     });
     if (r.ok) {
       const fredData = await r.json();
       const obs = fredData.observations;
       if (obs && obs.length > 0) {
-        const currentRate = parseFloat(obs[0].value);
-        const rateDate = obs[0].date;
-
-        // Also try to get market expectations from other FRED series
-        // DFF = Daily Federal Funds Rate
-        const fredUrl2 = 'https://api.stlouisfed.org/fred/series/observations?series_id=DFF&limit=1&sort_order=desc&file_type=json&api_key=DEMO_KEY';
-        let effectiveRate = currentRate;
-        try {
-          const r2 = await fetch(fredUrl2, {
-            headers: { 'User-Agent': UA },
-            signal: AbortSignal.timeout(5000)
-          });
-          if (r2.ok) {
-            const d2 = await r2.json();
-            if (d2.observations && d2.observations.length > 0) {
-              effectiveRate = parseFloat(d2.observations[0].value);
-            }
-          }
-        } catch(e) {}
-
         return res.status(200).json({
           source: 'fred',
           data: {
-            currentTargetRate: currentRate,
-            effectiveRate: effectiveRate,
-            rateDate: rateDate,
-            note: 'Current Fed Funds target rate from FRED. For meeting probabilities, visit CME FedWatch.'
+            currentTargetRate: parseFloat(obs[0].value),
+            rateDate: obs[0].date
           }
         });
       }
     }
   } catch(e) {}
 
-  // ═══ FALLBACK: Return current rate info with link ═══
+  // ═══ FALLBACK: Current rate + FOMC schedule (updated March 2026) ═══
+  // Filter to only future meetings
+  const now = new Date();
+  const upcomingMeetings = fomcMeetings.filter(m => new Date(m.date) > now);
+
   return res.status(200).json({
     source: 'fallback',
     data: {
-      currentTargetRange: '4.25% - 4.50%',
-      lastUpdate: 'March 2025',
-      note: 'CME FedWatch data unavailable from server. Current rate from last known FOMC decision.',
+      currentRate: `${CURRENT_LOWER.toFixed(2)}% - ${CURRENT_UPPER.toFixed(2)}%`,
+      lastFOMC: 'March 18-19, 2026 — Held steady',
+      dotPlot: '1 cut projected for 2026',
+      upcomingMeetings: upcomingMeetings.map(m => m.label),
+      nextMeeting: upcomingMeetings.length > 0 ? upcomingMeetings[0].label : null,
       link: 'https://www.cmegroup.com/markets/interest-rates/cme-fedwatch-tool.html'
     }
   });
