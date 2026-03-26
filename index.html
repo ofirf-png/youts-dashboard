@@ -341,6 +341,21 @@
       <div id="fedWatchContent" style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;"></div>
     </div>
 
+    <!-- ═══ Top Movers Widget ═══ -->
+    <div id="moversWidget" style="display:none;margin-bottom:20px;">
+      <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:2px;color:var(--gold);margin-bottom:12px;text-align:center;">📈 עולות ויורדות היום</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div>
+          <div style="font-size:0.65rem;color:#4CAF50;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700;">▲ Top Gainers</div>
+          <div id="moversGainers"></div>
+        </div>
+        <div>
+          <div style="font-size:0.65rem;color:#e74c3c;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:700;">▼ Top Losers</div>
+          <div id="moversLosers"></div>
+        </div>
+      </div>
+    </div>
+
     <div class="dash-section-label">שערי חליפין</div>
     <div class="dashboard-grid" id="dashFx"></div>
 
@@ -2281,6 +2296,8 @@ async function refreshDashboard() {
   updateFearGreed();
   // Update FedWatch rate probability
   fetchFedWatch();
+  // Update top movers
+  fetchMovers();
 }
 
 async function updateFearGreed() {
@@ -2508,7 +2525,63 @@ function fetchWatchlistQuotes() {
 }
 
 // Initialize watchlist on load
-document.addEventListener('DOMContentLoaded', function() { renderWatchlist(); fetchFedWatch(); });
+document.addEventListener('DOMContentLoaded', function() { renderWatchlist(); fetchFedWatch(); fetchMovers(); });
+
+// ═══ Top Movers (Gainers & Losers) ═══
+async function fetchMovers() {
+  try {
+    var r = await fetch('/api/movers', { signal: AbortSignal.timeout(15000) });
+    if (!r.ok) return;
+    var data = await r.json();
+
+    var widget = document.getElementById('moversWidget');
+    var gainersEl = document.getElementById('moversGainers');
+    var losersEl = document.getElementById('moversLosers');
+
+    if ((!data.gainers || data.gainers.length === 0) && (!data.losers || data.losers.length === 0)) return;
+
+    widget.style.display = 'block';
+
+    function renderList(items, container, isGainer) {
+      var html = '';
+      items.slice(0, 5).forEach(function(item) {
+        var color = isGainer ? '#4CAF50' : '#e74c3c';
+        var arrow = isGainer ? '▲' : '▼';
+        var pct = item.changePercent || '';
+        // Clean up percent format
+        if (pct && !pct.includes('%')) pct = pct + '%';
+        pct = pct.replace(/[()]/g, '');
+        if (!isGainer && pct && !pct.startsWith('-')) pct = '-' + pct;
+
+        html += '<div onclick="lookupTickerDirect(\'' + item.symbol + '\')" style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#0d0d0d;border:1px solid var(--card-border);border-radius:6px;margin-bottom:4px;cursor:pointer;transition:border-color 0.2s;" onmouseover="this.style.borderColor=\'var(--gold)\'" onmouseout="this.style.borderColor=\'var(--card-border)\'">';
+        html += '<div style="display:flex;align-items:center;gap:8px;">';
+        html += '<span style="font-family:\'DM Mono\',monospace;font-size:0.8rem;font-weight:700;color:var(--text);min-width:50px;">' + item.symbol + '</span>';
+        html += '<span style="font-size:0.65rem;color:var(--text-dim);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (item.name || '') + '</span>';
+        html += '</div>';
+        html += '<div style="text-align:left;display:flex;align-items:center;gap:6px;">';
+        if (item.price) {
+          html += '<span style="font-size:0.75rem;color:var(--text);font-family:\'DM Mono\',monospace;">$' + item.price + '</span>';
+        }
+        html += '<span style="font-size:0.75rem;font-weight:700;color:' + color + ';font-family:\'DM Mono\',monospace;">' + arrow + ' ' + pct + '</span>';
+        html += '</div>';
+        html += '</div>';
+      });
+      container.innerHTML = html;
+    }
+
+    if (data.gainers && data.gainers.length > 0) {
+      renderList(data.gainers, gainersEl, true);
+    } else {
+      gainersEl.innerHTML = '<div style="font-size:0.75rem;color:var(--text-dim);padding:8px;">אין נתונים</div>';
+    }
+
+    if (data.losers && data.losers.length > 0) {
+      renderList(data.losers, losersEl, false);
+    } else {
+      losersEl.innerHTML = '<div style="font-size:0.75rem;color:var(--text-dim);padding:8px;">אין נתונים</div>';
+    }
+  } catch(e) {}
+}
 
 // ═══ FedWatch Rate Probability ═══
 async function fetchFedWatch() {
