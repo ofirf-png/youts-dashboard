@@ -306,6 +306,9 @@
     <button class="btn-conclusions" id="conclusionsBtn" onclick="switchTab('conclusions')">
       מסקנות
     </button>
+    <button class="btn-conclusions" id="earningsBtn" onclick="switchTab('earnings')" style="background:rgba(255,255,255,0.06);">
+      📅 דוחות השבוע
+    </button>
     <button class="btn-run-all" id="dashRefreshTopBtn" onclick="refreshDashboard()">
       🔄 עדכן נתוני שוק
     </button>
@@ -331,6 +334,11 @@
         <div id="fgPointer" style="position:absolute;top:-4px;width:16px;height:16px;border-radius:50%;border:2px solid #fff;transform:translateX(-50%);transition:left 0.5s;"></div>
       </div>
       <div style="display:flex;justify-content:space-between;font-size:0.6rem;color:var(--text-dim);margin-top:4px;"><span>פחד קיצוני</span><span>פחד</span><span>ניטרלי</span><span>תאוות בצע</span><span>תאוות בצע קיצונית</span></div>
+    </div>
+
+    <div id="fedWatchMeter" style="display:none;margin-bottom:20px;padding:16px 20px;border-radius:10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);">
+      <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:2px;color:var(--gold);margin-bottom:12px;text-align:center;">CME FedWatch — סיכוי להורדת ריבית</div>
+      <div id="fedWatchContent" style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;"></div>
     </div>
 
     <div class="dash-section-label">שערי חליפין</div>
@@ -397,6 +405,8 @@
 
   <div class="grid" id="grid"></div>
   <div class="conclusions-panel" id="conclusionsPanel"></div>
+  <div class="conclusions-panel" id="earningsPanel"></div>
+
 
   <div class="footer">YouTS — כל הזכויות שמורות © 2025</div>
 </div>
@@ -466,8 +476,11 @@ function switchTab(tabId) {
 
   // Update conclusions button highlight
   var concBtn = document.getElementById('conclusionsBtn');
+  var earnBtn = document.getElementById('earningsBtn');
   if (tabId === 'conclusions') concBtn.classList.add('active');
   else concBtn.classList.remove('active');
+  if (tabId === 'earnings') earnBtn.classList.add('active');
+  else earnBtn.classList.remove('active');
 
   // Show/hide custom input
   var customRow = document.getElementById('customRow');
@@ -479,12 +492,22 @@ function switchTab(tabId) {
   if (tabId === 'conclusions') {
     document.getElementById('grid').style.display = 'none';
     document.getElementById('channelInfo').classList.remove('visible');
+    document.getElementById('earningsPanel').classList.remove('visible');
     renderConclusions();
+    return;
+  }
+
+  if (tabId === 'earnings') {
+    document.getElementById('grid').style.display = 'none';
+    document.getElementById('channelInfo').classList.remove('visible');
+    document.getElementById('conclusionsPanel').classList.remove('visible');
+    renderEarningsCalendar();
     return;
   }
 
   document.getElementById('grid').style.display = '';
   document.getElementById('conclusionsPanel').classList.remove('visible');
+  document.getElementById('earningsPanel').classList.remove('visible');
 
   if (channelData[tabId]) {
     showChannelData(tabId);
@@ -2484,6 +2507,154 @@ function fetchWatchlistQuotes() {
 
 // Initialize watchlist on load
 document.addEventListener('DOMContentLoaded', function() { renderWatchlist(); });
+
+// ═══ FedWatch Rate Probability ═══
+async function fetchFedWatch() {
+  try {
+    var meter = document.getElementById('fedWatchMeter');
+    var r = await fetch('/api/fedwatch', { signal: AbortSignal.timeout(10000) });
+    if (!r.ok) return;
+    var data = await r.json();
+    if (data.error && (!data.meetings || data.meetings.length === 0)) return;
+
+    meter.style.display = 'block';
+    var container = document.getElementById('fedWatchContent');
+
+    // Try to parse the CME data format
+    var meetings = [];
+    if (Array.isArray(data)) {
+      meetings = data;
+    } else if (data.meetings) {
+      meetings = data.meetings;
+    } else if (data.fedFundTarget) {
+      // Parse from fed-fund-target format
+      var targets = data.fedFundTarget;
+      if (Array.isArray(targets)) {
+        meetings = targets.slice(0, 6);
+      }
+    }
+
+    if (meetings.length === 0) {
+      // Show raw data if we got something
+      container.innerHTML = '<div style="font-size:0.8rem;color:var(--text-dim);">נתוני FedWatch לא זמינים כעת. <a href="https://www.cmegroup.com/markets/interest-rates/cme-fedwatch-tool.html" target="_blank" style="color:var(--gold);">צפה באתר CME</a></div>';
+      return;
+    }
+
+    var html = '';
+    meetings.slice(0, 6).forEach(function(m) {
+      var date = m.meetingDate || m.date || m.meeting || '';
+      var cutProb = m.cutProbability || m.cut || m.easing || 0;
+      var holdProb = m.holdProbability || m.hold || m.unchanged || 0;
+      var hikeProb = m.hikeProbability || m.hike || m.tightening || 0;
+
+      if (typeof cutProb === 'string') cutProb = parseFloat(cutProb);
+      if (typeof holdProb === 'string') holdProb = parseFloat(holdProb);
+
+      var mainProb = cutProb > holdProb ? cutProb : holdProb;
+      var mainLabel = cutProb > holdProb ? 'הורדה' : 'ללא שינוי';
+      var mainColor = cutProb > holdProb ? '#4CAF50' : '#ff9800';
+
+      html += '<div style="flex:1;min-width:120px;background:#0d0d0d;border:1px solid var(--card-border);border-radius:8px;padding:10px 12px;text-align:center;">';
+      html += '<div style="font-size:0.65rem;color:var(--text-dim);margin-bottom:4px;">' + date + '</div>';
+      html += '<div style="font-size:1.1rem;font-weight:700;color:' + mainColor + ';">' + mainProb.toFixed(1) + '%</div>';
+      html += '<div style="font-size:0.6rem;color:var(--text-dim);">' + mainLabel + '</div>';
+      html += '</div>';
+    });
+
+    container.innerHTML = html;
+  } catch(e) {
+    // Silently fail - show link to CME
+    var meter = document.getElementById('fedWatchMeter');
+    meter.style.display = 'block';
+    document.getElementById('fedWatchContent').innerHTML = '<div style="font-size:0.8rem;color:var(--text-dim);">נתוני FedWatch לא זמינים כעת. <a href="https://www.cmegroup.com/markets/interest-rates/cme-fedwatch-tool.html" target="_blank" style="color:var(--gold);">צפה באתר CME →</a></div>';
+  }
+}
+
+// ═══ Earnings Calendar ═══
+async function renderEarningsCalendar() {
+  var panel = document.getElementById('earningsPanel');
+  panel.classList.add('visible');
+  panel.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-dim);font-size:0.9rem;">טוען לוח דוחות השבוע...</div>';
+
+  try {
+    var r = await fetch('/api/earnings', { signal: AbortSignal.timeout(15000) });
+    var data = await r.json();
+
+    if (data.error && !data.days) {
+      panel.innerHTML = '<div style="text-align:center;padding:40px;color:#e74c3c;">שגיאה בטעינת דוחות</div>';
+      return;
+    }
+
+    var dayNamesHeb = { Monday: 'יום שני', Tuesday: 'יום שלישי', Wednesday: 'יום רביעי', Thursday: 'יום חמישי', Friday: 'יום שישי' };
+    var dayNamesEn = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+
+    var html = '';
+    html += '<div style="padding:20px;">';
+    html += '<div style="text-align:center;margin-bottom:20px;">';
+    html += '<div style="font-family:\'Playfair Display\',serif;font-size:1.3rem;color:var(--gold-light);margin-bottom:4px;">📅 דוחות כספיים השבוע</div>';
+    html += '<div style="font-size:0.75rem;color:var(--text-dim);">Most Anticipated Earnings Releases · ' + data.startDate + ' — ' + data.endDate + '</div>';
+    html += '</div>';
+
+    // Grid of 5 days
+    html += '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;">';
+
+    var totalEarnings = 0;
+    dayNamesEn.forEach(function(day) {
+      var d = data.days[day];
+      var count = d ? d.beforeOpen.length + d.afterClose.length : 0;
+      totalEarnings += count;
+
+      html += '<div style="background:var(--card-bg);border:1px solid var(--card-border);border-radius:8px;overflow:hidden;">';
+      // Day header
+      html += '<div style="background:#0d0d0d;padding:10px;text-align:center;border-bottom:1px solid var(--card-border);">';
+      html += '<div style="font-size:0.8rem;font-weight:600;color:var(--gold-light);">' + dayNamesHeb[day] + '</div>';
+      html += '<div style="font-size:0.6rem;color:var(--text-dim);">' + (d ? d.date : '') + '</div>';
+      html += '</div>';
+
+      if (!d || count === 0) {
+        html += '<div style="padding:16px;text-align:center;font-size:0.7rem;color:var(--text-dim);">אין דוחות</div>';
+      } else {
+        // Before Open
+        if (d.beforeOpen.length > 0) {
+          html += '<div style="padding:6px 8px;font-size:0.55rem;color:var(--gold);text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid rgba(255,255,255,0.05);">Before Open</div>';
+          d.beforeOpen.slice(0, 15).forEach(function(e) {
+            html += '<div onclick="lookupTickerDirect(\'' + e.ticker + '\')" style="padding:4px 8px;font-size:0.72rem;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.03);display:flex;justify-content:space-between;align-items:center;" onmouseover="this.style.background=\'rgba(255,255,255,0.05)\'" onmouseout="this.style.background=\'\'">';
+            html += '<span style="color:var(--text);font-weight:600;">' + e.ticker + '</span>';
+            if (e.epsEstimate) html += '<span style="color:var(--text-dim);font-size:0.6rem;">EPS: ' + e.epsEstimate + '</span>';
+            html += '</div>';
+          });
+        }
+        // After Close
+        if (d.afterClose.length > 0) {
+          html += '<div style="padding:6px 8px;font-size:0.55rem;color:#ff9800;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid rgba(255,255,255,0.05);">After Close</div>';
+          d.afterClose.slice(0, 15).forEach(function(e) {
+            html += '<div onclick="lookupTickerDirect(\'' + e.ticker + '\')" style="padding:4px 8px;font-size:0.72rem;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.03);display:flex;justify-content:space-between;align-items:center;" onmouseover="this.style.background=\'rgba(255,255,255,0.05)\'" onmouseout="this.style.background=\'\'">';
+            html += '<span style="color:var(--text);font-weight:600;">' + e.ticker + '</span>';
+            if (e.epsEstimate) html += '<span style="color:var(--text-dim);font-size:0.6rem;">EPS: ' + e.epsEstimate + '</span>';
+            html += '</div>';
+          });
+        }
+      }
+      html += '</div>';
+    });
+
+    html += '</div>'; // end grid
+
+    if (totalEarnings === 0) {
+      html += '<div style="text-align:center;margin-top:20px;padding:20px;background:var(--card-bg);border:1px solid var(--card-border);border-radius:8px;">';
+      html += '<div style="font-size:0.85rem;color:var(--text-dim);margin-bottom:8px;">לא נמצאו דוחות לשבוע זה</div>';
+      html += '<a href="https://www.earningswhispers.com/calendar" target="_blank" style="color:var(--gold);font-size:0.8rem;">צפו בלוח הדוחות המלא ב-Earnings Whispers →</a>';
+      html += '</div>';
+    }
+
+    html += '</div>'; // end padding wrapper
+    panel.innerHTML = html;
+
+  } catch(e) {
+    panel.innerHTML = '<div style="text-align:center;padding:40px;"><div style="color:#e74c3c;margin-bottom:10px;">שגיאה בטעינת לוח הדוחות</div><a href="https://www.earningswhispers.com/calendar" target="_blank" style="color:var(--gold);font-size:0.85rem;">צפו בלוח דוחות ב-Earnings Whispers →</a></div>';
+  }
+}
+
 </script>
 
 </body>
