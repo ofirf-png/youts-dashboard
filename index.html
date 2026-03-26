@@ -2512,58 +2512,91 @@ document.addEventListener('DOMContentLoaded', function() { renderWatchlist(); })
 async function fetchFedWatch() {
   try {
     var meter = document.getElementById('fedWatchMeter');
-    var r = await fetch('/api/fedwatch', { signal: AbortSignal.timeout(10000) });
+    var r = await fetch('/api/fedwatch', { signal: AbortSignal.timeout(15000) });
     if (!r.ok) return;
-    var data = await r.json();
-    if (data.error && (!data.meetings || data.meetings.length === 0)) return;
+    var resp = await r.json();
 
     meter.style.display = 'block';
     var container = document.getElementById('fedWatchContent');
+    var source = resp.source || '';
+    var data = resp.data || resp;
 
-    // Try to parse the CME data format
+    // ── Handle FRED source (current rate) ──
+    if (source === 'fred') {
+      var rate = data.currentTargetRate || data.effectiveRate;
+      var effRate = data.effectiveRate;
+      var rateDate = data.rateDate || '';
+      var html = '<div style="display:flex;gap:12px;flex-wrap:wrap;">';
+      html += '<div style="flex:1;min-width:140px;background:#0d0d0d;border:1px solid var(--card-border);border-radius:8px;padding:12px;text-align:center;">';
+      html += '<div style="font-size:0.6rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Target Rate (Upper)</div>';
+      html += '<div style="font-size:1.4rem;font-weight:700;color:var(--gold);">' + (rate ? rate.toFixed(2) + '%' : 'N/A') + '</div>';
+      html += '</div>';
+      html += '<div style="flex:1;min-width:140px;background:#0d0d0d;border:1px solid var(--card-border);border-radius:8px;padding:12px;text-align:center;">';
+      html += '<div style="font-size:0.6rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Effective Rate</div>';
+      html += '<div style="font-size:1.4rem;font-weight:700;color:#4CAF50;">' + (effRate ? effRate.toFixed(2) + '%' : 'N/A') + '</div>';
+      html += '</div>';
+      html += '<div style="flex:1;min-width:140px;background:#0d0d0d;border:1px solid var(--card-border);border-radius:8px;padding:12px;text-align:center;">';
+      html += '<div style="font-size:0.6rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Meeting Probs</div>';
+      html += '<a href="https://www.cmegroup.com/markets/interest-rates/cme-fedwatch-tool.html" target="_blank" style="font-size:0.85rem;font-weight:600;color:var(--gold);text-decoration:none;">CME FedWatch →</a>';
+      html += '</div>';
+      html += '</div>';
+      if (rateDate) {
+        html += '<div style="font-size:0.55rem;color:var(--text-dim);margin-top:6px;text-align:left;">Updated: ' + rateDate + ' · Source: FRED</div>';
+      }
+      container.innerHTML = html;
+      return;
+    }
+
+    // ── Handle fallback source ──
+    if (source === 'fallback') {
+      var html = '<div style="display:flex;gap:12px;flex-wrap:wrap;">';
+      html += '<div style="flex:1;min-width:140px;background:#0d0d0d;border:1px solid var(--card-border);border-radius:8px;padding:12px;text-align:center;">';
+      html += '<div style="font-size:0.6rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Target Rate Range</div>';
+      html += '<div style="font-size:1.4rem;font-weight:700;color:var(--gold);">' + (data.currentTargetRange || '4.25-4.50%') + '</div>';
+      html += '</div>';
+      html += '<div style="flex:2;min-width:200px;background:#0d0d0d;border:1px solid var(--card-border);border-radius:8px;padding:12px;text-align:center;display:flex;align-items:center;justify-content:center;">';
+      html += '<a href="https://www.cmegroup.com/markets/interest-rates/cme-fedwatch-tool.html" target="_blank" style="font-size:0.85rem;font-weight:600;color:var(--gold);text-decoration:none;">📊 צפה בהסתברויות להורדת ריבית ב-CME FedWatch →</a>';
+      html += '</div></div>';
+      container.innerHTML = html;
+      return;
+    }
+
+    // ── Handle CME source (meeting probabilities) ──
     var meetings = [];
     if (Array.isArray(data)) {
       meetings = data;
     } else if (data.meetings) {
       meetings = data.meetings;
     } else if (data.fedFundTarget) {
-      // Parse from fed-fund-target format
       var targets = data.fedFundTarget;
-      if (Array.isArray(targets)) {
-        meetings = targets.slice(0, 6);
-      }
+      if (Array.isArray(targets)) meetings = targets.slice(0, 6);
     }
 
     if (meetings.length === 0) {
-      // Show raw data if we got something
       container.innerHTML = '<div style="font-size:0.8rem;color:var(--text-dim);">נתוני FedWatch לא זמינים כעת. <a href="https://www.cmegroup.com/markets/interest-rates/cme-fedwatch-tool.html" target="_blank" style="color:var(--gold);">צפה באתר CME</a></div>';
       return;
     }
 
-    var html = '';
+    var html = '<div style="display:flex;gap:8px;flex-wrap:wrap;">';
     meetings.slice(0, 6).forEach(function(m) {
       var date = m.meetingDate || m.date || m.meeting || '';
       var cutProb = m.cutProbability || m.cut || m.easing || 0;
       var holdProb = m.holdProbability || m.hold || m.unchanged || 0;
-      var hikeProb = m.hikeProbability || m.hike || m.tightening || 0;
-
       if (typeof cutProb === 'string') cutProb = parseFloat(cutProb);
       if (typeof holdProb === 'string') holdProb = parseFloat(holdProb);
-
       var mainProb = cutProb > holdProb ? cutProb : holdProb;
       var mainLabel = cutProb > holdProb ? 'הורדה' : 'ללא שינוי';
       var mainColor = cutProb > holdProb ? '#4CAF50' : '#ff9800';
 
-      html += '<div style="flex:1;min-width:120px;background:#0d0d0d;border:1px solid var(--card-border);border-radius:8px;padding:10px 12px;text-align:center;">';
-      html += '<div style="font-size:0.65rem;color:var(--text-dim);margin-bottom:4px;">' + date + '</div>';
+      html += '<div style="flex:1;min-width:110px;background:#0d0d0d;border:1px solid var(--card-border);border-radius:8px;padding:10px;text-align:center;">';
+      html += '<div style="font-size:0.6rem;color:var(--text-dim);margin-bottom:4px;">' + date + '</div>';
       html += '<div style="font-size:1.1rem;font-weight:700;color:' + mainColor + ';">' + mainProb.toFixed(1) + '%</div>';
-      html += '<div style="font-size:0.6rem;color:var(--text-dim);">' + mainLabel + '</div>';
+      html += '<div style="font-size:0.55rem;color:var(--text-dim);">' + mainLabel + '</div>';
       html += '</div>';
     });
-
+    html += '</div>';
     container.innerHTML = html;
   } catch(e) {
-    // Silently fail - show link to CME
     var meter = document.getElementById('fedWatchMeter');
     meter.style.display = 'block';
     document.getElementById('fedWatchContent').innerHTML = '<div style="font-size:0.8rem;color:var(--text-dim);">נתוני FedWatch לא זמינים כעת. <a href="https://www.cmegroup.com/markets/interest-rates/cme-fedwatch-tool.html" target="_blank" style="color:var(--gold);">צפה באתר CME →</a></div>';
